@@ -323,6 +323,16 @@ def init_db():
                 )
             ''')
             
+            # 9. OTPs Table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS otps (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    otp VARCHAR(6) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             conn.commit()
             print("DATABASE SYNC: All tables verified/created successfully.")
         except Error as e:
@@ -448,11 +458,15 @@ class OrderRequest(BaseModel):
     total: float
     payment_method: str
 
-class GoogleLoginRequest(BaseModel):
+class OTPRequest(BaseModel):
     email: str
-    name: str
-    avatar_url: Optional[str] = None
     selected_role: str
+
+class LoginRequest(BaseModel):
+    email: str
+    otp: str
+    selected_role: str
+    name: Optional[str] = None
 
 class SwitchRoleRequest(BaseModel):
     email: str
@@ -471,11 +485,64 @@ class VerifyDropoffRequest(BaseModel):
 
 # --- AUTH ENDPOINTS ---
 
-@app.post("/auth/google-login")
-async def google_login(data: GoogleLoginRequest):
-    email = data.email
-    name = data.name
-    avatar_url = data.avatar_url
+@app.post("/auth/request-otp")
+async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
+    email = data.email.strip().lower()
+    selected_role = data.selected_role
+    
+    if selected_role not in ["student", "vendor", "partner"]:
+        raise HTTPException(status_code=400, detail="Invalid user role")
+        
+    # Generate 6-digit OTP
+    otp = f"{random.randint(100000, 999999)}"
+    
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    cursor = conn.cursor()
+    try:
+        # Delete old OTPs for this email
+        cursor.execute("DELETE FROM otps WHERE email = %s", (email,))
+        # Insert new OTP
+        cursor.execute("INSERT INTO otps (email, otp) VALUES (%s, %s)", (email, otp))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+        
+    dev_mode = os.getenv("DEV_MODE", "true").lower() == "true"
+    
+    # Send OTP Email
+    otp_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <h2 style="color: #1B4332; margin-bottom: 20px;">Mekal Mart Verification Code</h2>
+        <p>Your 6-digit login verification token is:</p>
+        <div style="background-color: #F9FBFF; padding: 15px; border-radius: 8px; border: 1px solid #e0f3f7; text-align: center; margin-bottom: 20px;">
+            <span style="font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #1B4332;">{otp}</span>
+        </div>
+        <p style="font-size: 12px; color: #64748B;">This code is valid for 10 minutes. Please do not share it with anyone.</p>
+        <p style="font-size: 11px; color: #94A3B8; text-align: center; margin-top: 30px; border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            Mekal Mart - Campus Delivery Platform
+        </p>
+    </div>
+    """
+    
+    # Send email in background
+    background_tasks.add_task(send_resend_email, email, f"{otp} is your Mekal Mart verification code", otp_html)
+    
+    # If dev_mode, return OTP in response so client-side message simulation works
+    if dev_mode:
+        print(f"DEVELOPER NOTIFICATION: Generated OTP {otp} for email {email}")
+        return {"status": "success", "message": "Verification code generated.", "otp": otp}
+        
+    return {"status": "success", "message": "Verification code sent to your email."}
+
+@app.post("/auth/login")
+async def login(data: LoginRequest):
+    email = data.email.strip().lower()
+    otp = data.otp.strip()
     selected_role = data.selected_role
     
     if selected_role not in ["student", "vendor", "partner"]:
@@ -486,20 +553,38 @@ async def google_login(data: GoogleLoginRequest):
         raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
     try:
-        # CHECK IF USER EXISTS
+        # Check OTP
+        cursor.execute("SELECT * FROM otps WHERE email = %s AND otp = %s AND created_at >= NOW() - INTERVAL '10 minutes'", (email, otp))
+        otp_row = cursor.fetchone()
+        
+        # If DEV_MODE is true, we allow a special mock verification bypass code (123456)
+        dev_mode = os.getenv("DEV_MODE", "true").lower() == "true"
+        is_mock_bypass = dev_mode and otp == "123456"
+        
+        if not otp_row and not is_mock_bypass:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
+            
+        # Delete used OTP
+        if otp_row:
+            cursor.execute("DELETE FROM otps WHERE id = %s", (otp_row['id'],))
+            
+        # Check if user exists
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         
+        name = data.name or email.split('@')[0].capitalize()
+        avatar_url = f"https://api.dicebear.com/7.x/adventurer/svg?seed={email}"
+        
         if not user:
-            # Signup: Insert new user
+            # Register user
             cursor.execute("""
                 INSERT INTO users (email, role, auth_provider, wallet_balance)
-                VALUES (%s, %s, 'google', 0.00) RETURNING id, email, role, wallet_balance
+                VALUES (%s, %s, 'email_otp', 0.00) RETURNING id, email, role, wallet_balance
             """, (email, selected_role))
             user = cursor.fetchone()
             user_id = user["id"]
             
-            # Immediately insert a profile row into student_profiles, vendor_profiles, or partner_profiles
+            # Create profile
             if selected_role == 'student':
                 cursor.execute("""
                     INSERT INTO student_profiles (user_id, student_name, profile_image)
@@ -571,6 +656,9 @@ async def google_login(data: GoogleLoginRequest):
             "token": token,
             "user": user_data
         }
+    except HTTPException:
+        conn.rollback()
+        raise
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))

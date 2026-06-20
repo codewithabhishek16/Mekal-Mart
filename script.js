@@ -218,47 +218,125 @@ function setAuthRole(role) {
     });
 }
 
-async function signInWithGoogle(e) {
-    if (!supabaseClient || (e && e.shiftKey)) {
-        showToast("Using Mock Google Login bypass...", "success");
-        triggerMockLogin();
-        return;
-    }
+async function handleAuthAction(e) {
+    if (e) e.preventDefault();
     
-    // Save chosen role to localStorage so callback page can read it on redirect
-    let selectedRole = currentAuthRole;
+    const email = document.getElementById('auth-email').value.trim();
+    if (!email) return showToast("Please enter your email address!", "error");
+    
+    const rolePill = currentAuthRole;
+    let selectedRole = rolePill;
     if (selectedRole === 'delivery') selectedRole = 'partner';
-    localStorage.setItem('selectedRoleForGoogleAuth', selectedRole);
-
-    const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: window.location.origin + window.location.pathname
+    
+    const otpContainer = document.getElementById('otp-input-container');
+    const otpInput = document.getElementById('auth-otp');
+    const btnText = document.getElementById('auth-btn-text');
+    const btnIcon = document.getElementById('auth-btn-icon');
+    const btn = document.getElementById('btn-auth-action');
+    
+    // Check if we need to request the OTP code first
+    if (otpContainer.classList.contains('hidden')) {
+        const originalText = btnText.innerText;
+        btnText.innerText = "Sending Code...";
+        btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#FFB703]";
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch(`${API_URL}/auth/request-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, selected_role: selectedRole })
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.status === 'success') {
+                showToast(data.message || "Verification code sent to your email!");
+                otpContainer.classList.remove('hidden');
+                btnText.innerText = "Verify & Login";
+                btnIcon.className = "fa-solid fa-check text-lg text-[#FFB703]";
+                
+                // If in DEV_MODE, autofill the OTP that the server generated for easier testing
+                if (data.otp) {
+                    otpInput.value = data.otp;
+                    showToast("DEV MODE: Auto-filled code " + data.otp, "info");
+                }
+            } else {
+                showToast(data.detail || data.message || "Failed to send code", "error");
+                btnText.innerText = originalText;
+                btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#FFB703]";
+            }
+        } catch (err) {
+            showToast("Connection error. Please try again.", "error");
+            btnText.innerText = originalText;
+            btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#FFB703]";
+        } finally {
+            btn.disabled = false;
         }
-    });
-
-    if (error) {
-        showToast("Google Sign-In Error: " + error.message, "error");
-        triggerMockLogin();
+    } else {
+        // Verify OTP and Login
+        const otpVal = otpInput.value.trim();
+        if (otpVal.length !== 6) return showToast("Enter the 6-digit verification code!", "error");
+        
+        const originalText = btnText.innerText;
+        btnText.innerText = "Verifying...";
+        btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#FFB703]";
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp: otpVal, selected_role: selectedRole })
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.status === 'success') {
+                localStorage.setItem('uniMartToken', data.token);
+                localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
+                localStorage.setItem('uniActiveRole', data.user.role);
+                
+                currentUser = data.user;
+                showToast("Signed in as " + currentUser.name, "success");
+                initSession(currentUser);
+                
+                setTimeout(() => {
+                    if (currentUser.role === 'vendor') {
+                        window.location.href = 'admin_dashboard.html';
+                    } else if (currentUser.role === 'partner' || currentUser.role === 'delivery') {
+                        window.location.href = 'delivery_dashboard.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                }, 1000);
+            } else {
+                showToast(data.detail || data.message || "Login failed", "error");
+                btnText.innerText = originalText;
+                btnIcon.className = "fa-solid fa-check text-lg text-[#FFB703]";
+            }
+        } catch (err) {
+            showToast("Connection error. Please try again.", "error");
+            btnText.innerText = originalText;
+            btnIcon.className = "fa-solid fa-check text-lg text-[#FFB703]";
+        } finally {
+            btn.disabled = false;
+        }
     }
 }
 
 async function triggerMockLogin() {
-    const email = prompt("Enter email for Mock Google login (Dev Bypass):", "student@example.com");
+    const email = prompt("Enter email for Mock login (Dev Bypass):", "student@example.com");
     if (!email) return;
-    const name = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     
     let selectedRole = localStorage.getItem('selectedRoleForGoogleAuth') || currentAuthRole || 'student';
     if (selectedRole === 'delivery') selectedRole = 'partner';
     
     try {
-        const res = await fetch(`${API_URL}/auth/google-login`, {
+        const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 email: email,
-                name: name,
-                avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`,
+                otp: "123456",
                 selected_role: selectedRole
             })
         });
@@ -286,7 +364,6 @@ async function triggerMockLogin() {
             showToast(data.detail || "Mock registration failed", "error");
         }
     } catch (e) {
-        console.error("Backend Mock OAuth syncing failed:", e);
         showToast("Sync Error: " + e.message, "error");
     }
 }

@@ -105,14 +105,23 @@
             <p class="text-slate-400 text-xs mt-1">Access your campus shop management portal</p>
         </div>
 
-        <!-- Google Sign-In Container -->
-        <div class="space-y-6">
-            <button onclick="signInWithGoogle(event)" id="btn-google" 
-                class="w-full py-4 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-2xl font-montserrat font-bold shadow-md transition flex items-center justify-center gap-3">
-                <i class="fa-brands fa-google text-rose-500 text-lg"></i>
-                <span>Sign in with Google</span>
+        <!-- Passwordless Email OTP Login Form -->
+        <div class="space-y-4">
+            <div class="space-y-2">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vendor Email Address</label>
+                <input type="email" id="auth-email" placeholder="e.g. vendor@university.edu" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition">
+            </div>
+            <div class="space-y-2 hidden" id="otp-input-container">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">6-Digit Verification Code</label>
+                <input type="text" id="auth-otp" placeholder="Enter 6-digit code" maxlength="6" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-xl text-sm font-bold tracking-widest text-center focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition">
+            </div>
+            
+            <button type="button" onclick="handleAuthAction(event)" id="btn-auth-action" class="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-lg text-white rounded-2xl font-montserrat font-bold shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 text-base flex items-center justify-center gap-3">
+                <i class="fa-solid fa-paper-plane text-lg text-white" id="auth-btn-icon"></i>
+                <span id="auth-btn-text">Get Verification Code</span>
             </button>
-            <div class="text-center" id="mock-login-container">
+            
+            <div class="text-center hidden" id="mock-login-container">
                 <a href="#" onclick="triggerMockLogin(); return false;" class="text-xs text-slate-500 hover:text-white hover:underline">
                     Local Developer Bypass (Mock Login)
                 </a>
@@ -145,44 +154,105 @@
             el.className = isError ? "text-center text-rose-500 mt-6 text-sm font-semibold min-h-[20px]" : "text-center text-emerald-400 mt-6 text-sm font-semibold min-h-[20px]";
         }
 
-        async function signInWithGoogle(e) {
-            if (!supabaseClient || (e && e.shiftKey)) {
-                triggerMockLogin();
-                return;
-            }
+        async function handleAuthAction(e) {
+            if (e) e.preventDefault();
             
-            // Set role in localStorage so callback handles it
-            localStorage.setItem('selectedRoleForGoogleAuth', 'vendor');
+            const email = document.getElementById('auth-email').value.trim();
+            if (!email) return showMessage("Please enter your email address!", true);
             
-            const redirectUrl = window.location.origin + window.location.pathname.replace('admin_login.html', 'index.html');
-            console.log("Redirecting to Google with callback:", redirectUrl);
-
-            const { error } = await supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: redirectUrl
+            const otpContainer = document.getElementById('otp-input-container');
+            const otpInput = document.getElementById('auth-otp');
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            const btn = document.getElementById('btn-auth-action');
+            
+            if (otpContainer.classList.contains('hidden')) {
+                const originalText = btnText.innerText;
+                btnText.innerText = "Sending Code...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-white";
+                btn.disabled = true;
+                
+                try {
+                    const res = await fetch(`${API_URL}/auth/request-otp`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, selected_role: 'vendor' })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok && data.status === 'success') {
+                        showMessage(data.message || "Verification code sent to your email!", false);
+                        otpContainer.classList.remove('hidden');
+                        btnText.innerText = "Verify & Login";
+                        btnIcon.className = "fa-solid fa-check text-lg text-white";
+                        
+                        if (data.otp) {
+                            otpInput.value = data.otp;
+                            showMessage("DEV MODE: Auto-filled code " + data.otp, false);
+                        }
+                    } else {
+                        showMessage(data.detail || data.message || "Failed to send code", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = "fa-solid fa-paper-plane text-lg text-white";
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = "fa-solid fa-paper-plane text-lg text-white";
+                } finally {
+                    btn.disabled = false;
                 }
-            });
-
-            if (error) {
-                showMessage("Google Sign-In Error: " + error.message, true);
-                triggerMockLogin();
+            } else {
+                const otpVal = otpInput.value.trim();
+                if (otpVal.length !== 6) return showMessage("Enter the 6-digit verification code!", true);
+                
+                const originalText = btnText.innerText;
+                btnText.innerText = "Verifying...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-white";
+                btn.disabled = true;
+                
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, otp: otpVal, selected_role: 'vendor' })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok && data.status === 'success') {
+                        showMessage("Login successful!", false);
+                        localStorage.setItem('uniActiveRole', 'vendor');
+                        localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
+                        localStorage.setItem('uniMartToken', data.token);
+                        setTimeout(() => {
+                            window.location.href = 'admin_dashboard.html';
+                        }, 1000);
+                    } else {
+                        showMessage(data.detail || data.message || "Login failed", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = "fa-solid fa-check text-lg text-white";
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = "fa-solid fa-check text-lg text-white";
+                } finally {
+                    btn.disabled = false;
+                }
             }
         }
 
         async function triggerMockLogin() {
-            const email = prompt("Enter email for Mock Vendor Google login (Dev Bypass):", "vendor@example.com");
+            const email = prompt("Enter email for Mock Vendor login (Dev Bypass):", "vendor@example.com");
             if (!email) return;
-            const name = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
             
             try {
-                const res = await fetch(`${API_URL}/auth/google-login`, {
+                const res = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email: email,
-                        name: name,
-                        avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`,
+                        otp: "123456",
                         selected_role: 'vendor'
                     })
                 });

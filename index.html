@@ -126,13 +126,23 @@
                         <button type="button" onclick="setAuthRole('delivery')" id="auth-pill-delivery" class="flex-1 py-3 text-xs font-black rounded-xl transition-all text-slate-400 hover:text-slate-600">DELIVERY</button>
                     </div>
 
-                    <!-- Sign In Button -->
+                    <!-- Passwordless Email OTP Login Form -->
                     <div class="space-y-4">
-                        <button type="button" onclick="signInWithGoogle(event)" id="btn-google-signin" class="w-full bg-gradient-to-r from-[#1B4332] to-[#0F4755] text-white hover:shadow-lg py-3 md:py-4 px-6 rounded-2xl font-montserrat font-bold shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 text-base flex items-center justify-center gap-3">
-                            <i class="fa-brands fa-google text-lg md:text-xl text-[#FFB703]"></i>
-                            <span>Sign in with Google</span>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Campus Email Address</label>
+                            <input type="email" id="auth-email" placeholder="e.g. name@university.edu" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition">
+                        </div>
+                        <div class="space-y-2 hidden" id="otp-input-container">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">6-Digit Verification Code</label>
+                            <input type="text" id="auth-otp" placeholder="Enter 6-digit code" maxlength="6" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold tracking-widest text-center focus:outline-none focus:ring-4 focus:ring-primary/10 transition">
+                        </div>
+                        
+                        <button type="button" onclick="handleAuthAction(event)" id="btn-auth-action" class="w-full bg-gradient-to-r from-[#1B4332] to-[#0F4755] text-white hover:shadow-lg py-3 md:py-4 px-6 rounded-2xl font-montserrat font-bold shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 text-base flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-paper-plane text-lg text-[#FFB703]" id="auth-btn-icon"></i>
+                            <span id="auth-btn-text">Get Verification Code</span>
                         </button>
-                        <div class="text-center" id="mock-login-container">
+                        
+                        <div class="text-center hidden" id="mock-login-container">
                             <a href="#" onclick="triggerMockLogin(); return false;" class="text-xs text-slate-400 hover:text-igntu-navy hover:underline transition">
                                 Local Developer Bypass (Mock Login)
                             </a>
