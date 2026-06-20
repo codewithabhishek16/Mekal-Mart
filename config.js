@@ -1,7 +1,7 @@
 // Shared Mekal Mart configuration — loaded before other scripts
 const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
     ? 'http://localhost:8000'
-    : 'https://unimart.onrender.com';
+    : 'https://mekal-mart.onrender.com';
 
 const DELIVERY_FEE = 10;
 
