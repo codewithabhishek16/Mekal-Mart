@@ -200,13 +200,18 @@ def init_db():
                     id SERIAL PRIMARY KEY,
                     email VARCHAR(255) UNIQUE NOT NULL,
                     phone VARCHAR(20) UNIQUE NULL,
-                    role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'vendor', 'partner')),
+                    role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'vendor', 'partner', 'admin')),
                     auth_provider VARCHAR(20) DEFAULT 'google',
                     wallet_balance DECIMAL(10,2) DEFAULT 0.00,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            try:
+                cursor.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check")
+                cursor.execute("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'vendor', 'partner', 'admin'))")
+            except Exception as e:
+                print(f"Migration note for users role check: {e}")
             
             # 2. Vendor Profiles
             cursor.execute('''
@@ -467,6 +472,7 @@ class LoginRequest(BaseModel):
     otp: str
     selected_role: str
     name: Optional[str] = None
+    phone: Optional[str] = None
 
 class SwitchRoleRequest(BaseModel):
     email: str
@@ -490,7 +496,7 @@ async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
     email = data.email.strip().lower()
     selected_role = data.selected_role
     
-    if selected_role not in ["student", "vendor", "partner"]:
+    if selected_role not in ["student", "vendor", "partner", "admin"]:
         raise HTTPException(status_code=400, detail="Invalid user role")
         
     # Generate 6-digit OTP
@@ -541,8 +547,9 @@ async def login(data: LoginRequest):
     email = data.email.strip().lower()
     otp = data.otp.strip()
     selected_role = data.selected_role
+    phone = data.phone.strip() if data.phone else None
     
-    if selected_role not in ["student", "vendor", "partner"]:
+    if selected_role not in ["student", "vendor", "partner", "admin"]:
         raise HTTPException(status_code=400, detail="Invalid user role")
         
     conn = get_db_connection()
@@ -575,9 +582,9 @@ async def login(data: LoginRequest):
         if not user:
             # Register user
             cursor.execute("""
-                INSERT INTO users (email, role, auth_provider, wallet_balance)
-                VALUES (%s, %s, 'email_otp', 0.00) RETURNING id, email, role, wallet_balance
-            """, (email, selected_role))
+                INSERT INTO users (email, phone, role, auth_provider, wallet_balance)
+                VALUES (%s, %s, %s, 'email_otp', 0.00) RETURNING id, email, phone, role, wallet_balance
+            """, (email, phone, selected_role))
             user = cursor.fetchone()
             user_id = user["id"]
             
@@ -603,10 +610,27 @@ async def login(data: LoginRequest):
             wallet_balance = 0.00
             user_name = name
             user_avatar = avatar_url
+            user_phone = phone
         else:
             user_id = user["id"]
             user_role = user["role"]
             wallet_balance = float(user["wallet_balance"])
+            
+            # Update phone and name if provided
+            if phone:
+                cursor.execute("UPDATE users SET phone = %s WHERE id = %s", (phone, user_id))
+            if data.name:
+                if user_role == 'student':
+                    cursor.execute("UPDATE student_profiles SET student_name = %s WHERE user_id = %s", (name, user_id))
+                elif user_role == 'vendor':
+                    cursor.execute("UPDATE vendor_profiles SET shop_name = %s WHERE user_id = %s", (name, user_id))
+                elif user_role == 'partner':
+                    cursor.execute("UPDATE partner_profiles SET partner_name = %s WHERE user_id = %s", (name, user_id))
+            conn.commit()
+            
+            # Refetch updated user record
+            cursor.execute("SELECT phone FROM users WHERE id = %s", (user_id,))
+            user_phone = cursor.fetchone()["phone"]
             
             # Fetch profile details
             if user_role == 'student':
@@ -629,6 +653,7 @@ async def login(data: LoginRequest):
         user_data = {
             "id": user_id,
             "email": email,
+            "phone": user_phone,
             "name": user_name,
             "role": user_role,
             "avatar_url": user_avatar,

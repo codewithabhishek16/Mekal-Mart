@@ -172,20 +172,15 @@
     <script src="config.js"></script>
     <script>
         // 1. Check Auth on Load
-        const adminUser = localStorage.getItem('uniMartAdmin');
         const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
-        if(!adminUser && (!activeUser || activeUser.role !== 'vendor')) {
-            window.location.href = 'admin_login.html';
+        if (!activeUser || (activeUser.role !== 'vendor' && activeUser.role !== 'admin')) {
+            window.location.href = 'login.html';
         }
 
         function logout() {
-            if(adminUser) {
-                localStorage.removeItem('uniMartAdmin');
-                window.location.href = 'admin_login.html';
-            } else {
-                localStorage.removeItem('uniMartActiveUser');
-                window.location.href = 'index.html';
-            }
+            localStorage.removeItem('uniMartActiveUser');
+            localStorage.removeItem('uniMartToken');
+            window.location.href = 'login.html';
         }
 
         // 2. Load Orders Function

@@ -342,9 +342,9 @@
 
 
         window.onload = async () => {
-            if (!activeUser || activeUser.role !== 'vendor') {
+            if (!activeUser || (activeUser.role !== 'vendor' && activeUser.role !== 'admin')) {
                 localStorage.removeItem('uniMartActiveUser');
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
             } else {
                 document.getElementById('vendor-shop-name').innerText = activeUser.shop_name || "Your Shop";
                 document.getElementById('vendor-shop-category').innerHTML = `
@@ -427,7 +427,7 @@
         async function logout() {
             localStorage.removeItem('uniMartActiveUser');
             localStorage.removeItem('uniMartToken');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
         
         function toggleAddProduct() {

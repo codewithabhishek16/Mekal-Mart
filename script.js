@@ -52,8 +52,9 @@ function loadCart() {
 }
 
 function sendOrderConfirmationEmail(emailParams, onComplete) {
-    if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
-        emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams).then(onComplete, onComplete);
+    const orderTemplate = (typeof ORDER_TEMPLATE_ID !== 'undefined') ? ORDER_TEMPLATE_ID : TEMPLATE_ID;
+    if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && orderTemplate) {
+        emailjs.send(SERVICE_ID, orderTemplate, emailParams).then(onComplete, onComplete);
     } else {
         onComplete();
     }
@@ -187,6 +188,32 @@ async function fetchProductsFromDB() {
 
 function openAuthModal(role = 'student') { 
     setAuthRole(role);
+    
+    // Reset login form fields and their visibility
+    const nameCont = document.getElementById('name-input-container');
+    const phoneCont = document.getElementById('phone-input-container');
+    const emailCont = document.getElementById('email-input-container');
+    const otpCont = document.getElementById('otp-input-container');
+    
+    if (nameCont) nameCont.classList.remove('hidden');
+    if (phoneCont) phoneCont.classList.remove('hidden');
+    if (emailCont) emailCont.classList.remove('hidden');
+    if (otpCont) otpCont.classList.add('hidden');
+    
+    const nameInput = document.getElementById('auth-name');
+    const phoneInput = document.getElementById('auth-phone');
+    const emailInput = document.getElementById('auth-email');
+    const otpInput = document.getElementById('auth-otp');
+    const btnText = document.getElementById('auth-btn-text');
+    const btnIcon = document.getElementById('auth-btn-icon');
+    
+    if (nameInput) nameInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (otpInput) otpInput.value = '';
+    if (btnText) btnText.innerText = "Get Verification Code";
+    if (btnIcon) btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#FFB703]";
+    
     const modal = document.getElementById('auth-modal');
     const card = document.getElementById('auth-card');
     modal.classList.remove('hidden');
@@ -225,8 +252,13 @@ function setAuthRole(role) {
 async function handleAuthAction(e) {
     if (e) e.preventDefault();
     
-    const email = document.getElementById('auth-email').value.trim();
-    if (!email) return showToast("Please enter your email address!", "error");
+    const nameInput = document.getElementById('auth-name');
+    const phoneInput = document.getElementById('auth-phone');
+    const emailInput = document.getElementById('auth-email');
+    
+    const name = nameInput ? nameInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const email = emailInput ? emailInput.value.trim() : '';
     
     const rolePill = currentAuthRole;
     let selectedRole = rolePill;
@@ -240,6 +272,10 @@ async function handleAuthAction(e) {
     
     // Check if we need to request the OTP code first
     if (otpContainer.classList.contains('hidden')) {
+        if (!name) return showToast("Please enter your name!", "error");
+        if (!phone || phone.length !== 10) return showToast("Please enter a valid 10-digit mobile number!", "error");
+        if (!email) return showToast("Please enter your email address!", "error");
+        
         const originalText = btnText.innerText;
         btnText.innerText = "Sending Code...";
         btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#FFB703]";
@@ -255,6 +291,15 @@ async function handleAuthAction(e) {
             
             if (res.ok && data.status === 'success') {
                 otpContainer.classList.remove('hidden');
+                
+                // Hide input containers for cleaner UI when entering OTP
+                const nameCont = document.getElementById('name-input-container');
+                const phoneCont = document.getElementById('phone-input-container');
+                const emailCont = document.getElementById('email-input-container');
+                if (nameCont) nameCont.classList.add('hidden');
+                if (phoneCont) phoneCont.classList.add('hidden');
+                if (emailCont) emailCont.classList.add('hidden');
+                
                 btnText.innerText = "Verify & Login";
                 btnIcon.className = "fa-solid fa-check text-lg text-[#FFB703]";
                 
@@ -262,7 +307,7 @@ async function handleAuthAction(e) {
                 if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
                     const templateParams = {
                         to_email: email,
-                        to_name: email.split('@')[0].toUpperCase(),
+                        to_name: name,
                         otp_code: data.otp,
                         otp: data.otp,
                         verification_code: data.otp,
@@ -307,7 +352,7 @@ async function handleAuthAction(e) {
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, otp: otpVal, selected_role: selectedRole })
+                body: JSON.stringify({ email: email, otp: otpVal, selected_role: selectedRole, name: name, phone: phone })
             });
             const data = await res.json();
             
@@ -351,6 +396,9 @@ async function triggerMockLogin() {
     let selectedRole = localStorage.getItem('selectedRoleForGoogleAuth') || currentAuthRole || 'student';
     if (selectedRole === 'delivery') selectedRole = 'partner';
     
+    const nameVal = document.getElementById('auth-name') ? document.getElementById('auth-name').value.trim() : '';
+    const phoneVal = document.getElementById('auth-phone') ? document.getElementById('auth-phone').value.trim() : '';
+    
     try {
         const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
@@ -358,7 +406,9 @@ async function triggerMockLogin() {
             body: JSON.stringify({
                 email: email,
                 otp: "123456",
-                selected_role: selectedRole
+                selected_role: selectedRole,
+                name: nameVal || email.split('@')[0],
+                phone: phoneVal || "9999999999"
             })
         });
         const data = await res.json();

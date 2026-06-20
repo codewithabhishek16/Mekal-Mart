@@ -12,7 +12,8 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // EmailJS — fill in to enable order confirmation emails
 const PUBLIC_KEY = 'a-TE3do_YWourmdiu';
 const SERVICE_ID = 'service_12pgxll';
-const TEMPLATE_ID = 'template_q8uhv3k';
+const TEMPLATE_ID = 'template_q8uhv3k'; // OTP Login template
+const ORDER_TEMPLATE_ID = 'template_7h0gijs'; // Order Confirmation template
 
 // Razorpay — loaded dynamically from the backend during transaction
 let RAZORPAY_KEY = '';

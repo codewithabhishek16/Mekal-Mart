@@ -128,7 +128,15 @@
 
                     <!-- Passwordless Email OTP Login Form -->
                     <div class="space-y-4">
-                        <div class="space-y-2">
+                        <div class="space-y-2" id="name-input-container">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                            <input type="text" id="auth-name" placeholder="e.g. John Doe" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition">
+                        </div>
+                        <div class="space-y-2" id="phone-input-container">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
+                            <input type="tel" id="auth-phone" placeholder="10-digit mobile number" maxlength="10" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition">
+                        </div>
+                        <div class="space-y-2" id="email-input-container">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Campus Email Address</label>
                             <input type="email" id="auth-email" placeholder="e.g. name@university.edu" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10 transition">
                         </div>
@@ -291,8 +299,7 @@
                     <div class="flex items-center gap-2 md:gap-3 order-2 md:order-none flex-shrink-0">
                         <!-- Desktop Auth Buttons -->
                         <div id="nav-logged-out" class="hidden md:flex items-center gap-2">
-                            <button onclick="openAuthModal('student')" class="bg-igntu-navy text-white px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black hover:bg-igntu-dark hover:shadow-lg transition transform hover:-translate-y-0.5">Sign-In</button>
-                            <button onclick="openAuthModal('vendor')" class="bg-white text-igntu-navy px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black border border-slate-200 hover:bg-slate-50 transition shadow-sm">Vendor</button>
+                            <button onclick="window.location.href='login.html'" class="bg-igntu-navy text-white px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black hover:bg-igntu-dark hover:shadow-lg transition transform hover:-translate-y-0.5">Login</button>
                         </div>
 
                         <!-- Logged In Actions -->
@@ -318,7 +325,7 @@
                         </button>
 
                         <!-- Mobile Menu Toggle (if needed) -->
-                        <button onclick="openAuthModal('student')" id="mobile-auth-btn" class="md:hidden bg-igntu-navy text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-igntu-dark transition">Login</button>
+                        <button onclick="window.location.href='login.html'" id="mobile-auth-btn" class="md:hidden bg-igntu-navy text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-igntu-dark transition">Login</button>
                     </div>
                 </div>
             </div>

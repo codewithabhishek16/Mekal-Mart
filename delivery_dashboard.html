@@ -223,7 +223,7 @@
         window.onload = async () => {
             if (!activeUser || (activeUser.role !== 'delivery' && activeUser.role !== 'partner')) {
                 localStorage.removeItem('uniMartActiveUser');
-                window.location.href = 'index.html';
+                window.location.href = 'login.html';
             }
         };
 
@@ -316,7 +316,8 @@
 
         async function logout() {
             localStorage.removeItem('uniMartActiveUser');
-            window.location.href = 'index.html';
+            localStorage.removeItem('uniMartToken');
+            window.location.href = 'login.html';
         }
 
         async function loadOrders() {
@@ -728,7 +729,7 @@
         async function logout() {
             localStorage.removeItem('uniMartActiveUser');
             localStorage.removeItem('uniMartToken');
-            window.location.href = 'index.html';
+            window.location.href = 'login.html';
         }
 
         // Init
