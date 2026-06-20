@@ -63,10 +63,14 @@ function sendOrderConfirmationEmail(emailParams, onComplete) {
 // 2. STARTUP LOGIC
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Hide Mock Login Developer Bypass in Production
+    // Toggle Mock Login Developer Bypass based on host
     const mockLoginContainer = document.getElementById('mock-login-container');
-    if (mockLoginContainer && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        mockLoginContainer.classList.add('hidden');
+    if (mockLoginContainer) {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            mockLoginContainer.classList.remove('hidden');
+        } else {
+            mockLoginContainer.classList.add('hidden');
+        }
     }
 
     // Initialize Supabase Client
@@ -250,15 +254,32 @@ async function handleAuthAction(e) {
             const data = await res.json();
             
             if (res.ok && data.status === 'success') {
-                showToast(data.message || "Verification code sent to your email!");
                 otpContainer.classList.remove('hidden');
                 btnText.innerText = "Verify & Login";
                 btnIcon.className = "fa-solid fa-check text-lg text-[#FFB703]";
                 
-                // If in DEV_MODE, autofill the OTP that the server generated for easier testing
-                if (data.otp) {
+                // If EmailJS is configured, send the OTP via EmailJS
+                if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
+                    const templateParams = {
+                        to_email: email,
+                        to_name: email.split('@')[0].toUpperCase(),
+                        otp_code: data.otp,
+                        otp: data.otp,
+                        verification_code: data.otp,
+                        message: `Your Mekal Mart verification code is ${data.otp}`
+                    };
+                    emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+                        .then(() => {
+                            showToast("Verification code sent to your email via EmailJS!", "success");
+                        }, (err) => {
+                            console.error("EmailJS OTP Send Error:", err);
+                            showToast("EmailJS failed to send. Developer fallback: enter " + data.otp, "warning");
+                            otpInput.value = data.otp;
+                        });
+                } else {
+                    // Fallback to auto-fill if EmailJS is not configured
                     otpInput.value = data.otp;
-                    showToast("DEV MODE: Auto-filled code " + data.otp, "info");
+                    showToast("EmailJS not configured. Auto-filled code " + data.otp, "info");
                 }
             } else {
                 showToast(data.detail || data.message || "Failed to send code", "error");

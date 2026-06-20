@@ -134,12 +134,22 @@
     <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
     <script src="config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const mockLoginContainer = document.getElementById('mock-login-container');
-            if (mockLoginContainer && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                mockLoginContainer.classList.add('hidden');
+            if (mockLoginContainer) {
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    mockLoginContainer.classList.remove('hidden');
+                } else {
+                    mockLoginContainer.classList.add('hidden');
+                }
+            }
+            if (typeof emailjs !== 'undefined' && PUBLIC_KEY) {
+                try { emailjs.init(PUBLIC_KEY); } catch (e) { console.error("EmailJS Error:", e); }
             }
         });
 
@@ -181,14 +191,30 @@
                     const data = await res.json();
                     
                     if (res.ok && data.status === 'success') {
-                        showMessage(data.message || "Verification code sent to your email!", false);
                         otpContainer.classList.remove('hidden');
                         btnText.innerText = "Verify & Login";
                         btnIcon.className = "fa-solid fa-check text-lg text-white";
                         
-                        if (data.otp) {
+                        if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
+                            const templateParams = {
+                                to_email: email,
+                                to_name: email.split('@')[0].toUpperCase(),
+                                otp_code: data.otp,
+                                otp: data.otp,
+                                verification_code: data.otp,
+                                message: `Your Mekal Mart verification code is ${data.otp}`
+                            };
+                            emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+                                .then(() => {
+                                    showMessage("Verification code sent to your email via EmailJS!", false);
+                                }, (err) => {
+                                    console.error("EmailJS OTP Send Error:", err);
+                                    showMessage("EmailJS failed to send. Code: " + data.otp, false);
+                                    otpInput.value = data.otp;
+                                });
+                        } else {
                             otpInput.value = data.otp;
-                            showMessage("DEV MODE: Auto-filled code " + data.otp, false);
+                            showMessage("EmailJS not configured. Auto-filled code " + data.otp, false);
                         }
                     } else {
                         showMessage(data.detail || data.message || "Failed to send code", true);

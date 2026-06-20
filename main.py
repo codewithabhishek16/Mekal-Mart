@@ -532,12 +532,9 @@ async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
     # Send email in background
     background_tasks.add_task(send_resend_email, email, f"{otp} is your Mekal Mart verification code", otp_html)
     
-    # If dev_mode, return OTP in response so client-side message simulation works
-    if dev_mode:
-        print(f"DEVELOPER NOTIFICATION: Generated OTP {otp} for email {email}")
-        return {"status": "success", "message": "Verification code generated.", "otp": otp}
-        
-    return {"status": "success", "message": "Verification code sent to your email."}
+    # Return OTP in response so client-side EmailJS or fallback can process it
+    print(f"OTP NOTIFICATION: Generated OTP {otp} for email {email}")
+    return {"status": "success", "message": "Verification code generated.", "otp": otp}
 
 @app.post("/auth/login")
 async def login(data: LoginRequest):
