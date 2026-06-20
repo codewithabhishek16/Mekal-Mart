@@ -1786,6 +1786,7 @@ async def serve_index_html():
     return FileResponse("index.html")
 
 
+os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 if __name__ == "__main__":
