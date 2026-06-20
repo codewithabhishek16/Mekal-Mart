@@ -1395,16 +1395,21 @@ async def add_product(
     name: str = Form(...), 
     price: float = Form(...), 
     category: str = Form(...), 
-    product_img: UploadFile = File(...),
+    product_img: Optional[UploadFile] = File(None),
+    img_url: Optional[str] = Form(None),
     current_user: dict = Depends(get_admin_user)
 ):
     # Verify vendor owns this shop
     if current_user["sub"] != shop_id:
         raise HTTPException(status_code=403, detail="Unauthorized to add items to this shop")
         
-    # Safe Upload and Sanitization
-    db_path = save_and_sanitize_upload(product_img)
-    
+    # Determine the image path
+    db_path = "store-placeholder.png"
+    if product_img and product_img.filename:
+        db_path = save_and_sanitize_upload(product_img)
+    elif img_url:
+        db_path = img_url
+        
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
