@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mekal Mart | Campus Delivery</title>
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1B4332',
+                        secondary: '#219EBC',
+                        action: '#FFB703',
+                        bglight: '#F9FBFF',
+                        ink: '#023047',
+                        igntu: {
+                            navy: '#1B4332',
+                            gold: '#FFB703',
+                            dark: '#112d22',
+                        },
+                        indigo: {
+                            50: '#F0F9FB',
+                            100: '#E0F3F7',
+                            200: '#BCE2EC',
+                            300: '#90CDE0',
+                            400: '#5FB5CE',
+                            500: '#219EBC',
+                            600: '#1A7E97',
+                            700: '#146073',
+                            800: '#0F4755',
+                            900: '#0B333D',
+                            950: '#072027',
+                        },
+                        violet: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        purple: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#023047',
+                            900: '#011F2E',
+                            950: '#00131C',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- Google Maps: Load on-demand in detectLocation() instead of blocking page load with a placeholder key -->
+    <!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_REAL_KEY&libraries=places"></script> -->
+    <link rel="stylesheet" href="style.css">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('SW Registered!', reg);
+                }).catch(err => console.log('SW Registration Failed:', err));
+            });
+        }
+    </script>
+</head>
+
+<body id="body-app" class="text-slate-800 font-sans h-screen flex flex-col transition-colors duration-500">
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-4 hidden bg-black/50 md:bg-black/60 backdrop-blur-md transition-all duration-300">
+        <div class="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-all duration-300 opacity-0 relative modal-modern" id="auth-card">
+            <!-- Close Button -->
+            <button onclick="closeAuthModal()" class="absolute top-4 md:top-6 right-4 md:right-6 w-9 md:w-10 h-9 md:h-10 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all z-10">
+                <i class="fa-solid fa-times text-base md:text-lg"></i>
+            </button>
+
+            <div class="p-6 md:p-8 pt-10 md:pt-12">
+                <div class="space-y-6 md:space-y-8">
+                    <!-- Header -->
+                    <div class="text-center space-y-2">
+                        <h2 class="text-2xl md:text-3xl font-black font-outfit text-slate-900 tracking-tight">Login or Signup</h2>
+                        <p class="text-slate-400 font-bold text-xs md:text-xs uppercase tracking-widest">Select your role to continue</p>
+                    </div>
+
+                    <!-- Role Selector -->
+                    <div class="flex p-1.5 bg-slate-100 rounded-2xl">
+                        <button type="button" onclick="setAuthRole('student')" id="auth-pill-student" class="flex-1 py-3 text-xs font-black rounded-xl transition-all bg-white text-igntu-navy shadow-sm hover:shadow-md">STUDENT</button>
+                        <button type="button" onclick="setAuthRole('vendor')" id="auth-pill-vendor" class="flex-1 py-3 text-xs font-black rounded-xl transition-all text-slate-400 hover:text-slate-600">VENDOR</button>
+                        <button type="button" onclick="setAuthRole('delivery')" id="auth-pill-delivery" class="flex-1 py-3 text-xs font-black rounded-xl transition-all text-slate-400 hover:text-slate-600">DELIVERY</button>
+                    </div>
+
+                    <!-- Sign In Button -->
+                    <div class="space-y-4">
+                        <button type="button" onclick="signInWithGoogle(event)" id="btn-google-signin" class="w-full bg-gradient-to-r from-[#1B4332] to-[#0F4755] text-white hover:shadow-lg py-3 md:py-4 px-6 rounded-2xl font-montserrat font-bold shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 text-base flex items-center justify-center gap-3">
+                            <i class="fa-brands fa-google text-lg md:text-xl text-[#FFB703]"></i>
+                            <span>Sign in with Google</span>
+                        </button>
+                        <div class="text-center" id="mock-login-container">
+                            <a href="#" onclick="triggerMockLogin(); return false;" class="text-xs text-slate-400 hover:text-igntu-navy hover:underline transition">
+                                Local Developer Bypass (Mock Login)
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Terms -->
+                    <p class="text-[9px] md:text-[10px] text-center text-slate-400 leading-relaxed font-bold">
+                        By continuing, you agree to our <span class="text-igntu-navy hover:underline cursor-pointer">Terms</span> and <span class="text-igntu-navy hover:underline cursor-pointer">Privacy Policy</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Application Modal -->
+    <div id="apply-delivery-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-3 md:p-4 hidden bg-black/50 md:bg-black/60 backdrop-blur-md transition-all duration-300">
+        <div class="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-all duration-300 opacity-0 modal-modern" id="apply-delivery-card">
+            <button onclick="closeApplyDeliveryModal()" class="absolute top-4 md:top-6 right-4 md:right-6 w-9 md:w-10 h-9 md:h-10 rounded-full bg-slate-50 hover:bg-red-50 flex items-center justify-center text-slate-400 hover:text-red-500 transition-all z-10">
+                <i class="fa-solid fa-times text-base md:text-lg"></i>
+            </button>
+            <div class="p-6 md:p-8 pt-10 md:pt-12 space-y-6">
+                <!-- Header -->
+                <div class="text-center space-y-2">
+                    <h2 class="text-2xl md:text-3xl font-black font-outfit text-slate-900 tracking-tight">Become an Agent</h2>
+                    <p class="text-slate-400 font-bold text-xs uppercase tracking-widest">Earn by delivering on campus</p>
+                </div>
+
+                <!-- Form -->
+                <div class="space-y-4">
+                    <input type="text" id="apply-student-id" placeholder="Student ID (e.g. 210204)" class="input-modern w-full text-sm">
+                    <input type="text" id="apply-hostel" placeholder="Hostel Name" class="input-modern w-full text-sm">
+                    <input type="text" id="apply-vehicle" placeholder="Vehicle Number (Optional)" class="input-modern w-full text-sm">
+                    <button type="button" onclick="submitDeliveryApplication()" id="btn-apply-delivery" class="w-full bg-gradient-to-r from-[#FFB703] to-[#E0A102] text-[#023047] py-3 px-6 rounded-xl font-montserrat font-bold shadow-lg shadow-yellow-500/30 hover:shadow-xl hover:shadow-yellow-500/40 transform hover:-translate-y-1 active:scale-95 transition text-base font-bold">
+                        Submit Application
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-3 md:p-4 hidden bg-black/50 md:bg-black/60 backdrop-blur-md transition-all duration-300">
+        <div class="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-lg md:max-w-2xl h-[85vh] md:h-[90vh] flex flex-col overflow-hidden fade-in relative pointer-events-auto modal-modern">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white p-4 md:p-6 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-lg md:text-xl font-bold">
+                    <i class="fa-solid fa-user-circle mr-2 md:mr-3"></i> My Account
+                </h2>
+                <button onclick="closeProfile()" class="hover:text-gray-300 text-lg md:text-xl transition">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                <!-- Profile Header Card -->
+                <div class="bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-100 rounded-2xl p-4 md:p-6 mb-6 flex flex-col sm:flex-row items-center gap-4 md:gap-6">
+                    <!-- Profile Image -->
+                    <div class="relative group flex-shrink-0">
+                        <div class="w-20 md:w-24 h-20 md:h-24 bg-gradient-to-br from-indigo-100 to-blue-100 text-gray-400 rounded-full flex items-center justify-center text-3xl md:text-4xl overflow-hidden shadow-inner border-4 border-white">
+                            <img id="profile-img-preview" src="" class="w-full h-full object-cover hidden" alt="Profile">
+                            <i id="profile-img-icon" class="fa-solid fa-user"></i>
+                        </div>
+                        <label for="profile-upload" class="absolute bottom-0 right-0 bg-indigo-600 hover:bg-indigo-700 text-white w-7 md:w-8 h-7 md:h-8 rounded-full flex items-center justify-center cursor-pointer shadow-md transition transform hover:scale-110 text-xs md:text-sm">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadProfileImage(event)">
+                    </div>
+
+                    <!-- User Details -->
+                    <div class="text-center sm:text-left flex-1 space-y-2 w-full">
+                        <h3 class="text-xs font-bold text-indigo-600 uppercase mb-2">User Details</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 text-sm w-full">
+                            <div>
+                                <p class="text-gray-500 text-xs font-bold">Name</p>
+                                <p class="font-bold text-gray-800" id="profile-name">--</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-xs font-bold">Phone</p>
+                                <p class="font-bold text-gray-800" id="profile-phone">--</p>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <p class="text-gray-500 text-xs font-bold">Email</p>
+                                <p class="font-bold text-gray-800 break-all" id="profile-email">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Section -->
+                <div class="bg-gradient-to-r from-indigo-600 via-blue-600 to-violet-600 rounded-2xl p-4 md:p-6 mb-6 text-white shadow-lg relative overflow-hidden group">
+                    <div class="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:blur-3xl transition-all"></div>
+                    <div class="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-3 md:gap-4">
+                        <div>
+                            <p class="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-1">Available Balance</p>
+                            <h2 class="text-3xl md:text-4xl font-black font-outfit" id="profile-wallet-balance">₹0.00</h2>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <input type="number" id="add-wallet-amount" placeholder="Amount" class="flex-1 md:w-24 px-3 py-2 md:py-2.5 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:bg-white/30 transition text-xs md:text-sm font-bold">
+                            <button onclick="addMoneyToWallet()" class="bg-white text-indigo-700 px-3 md:px-4 py-2 md:py-2.5 rounded-lg font-bold hover:bg-indigo-50 transition shadow-lg text-xs md:text-sm flex items-center gap-1 whitespace-nowrap">
+                                <i class="fa-solid fa-plus-circle text-base md:text-lg"></i> <span class="hidden md:inline">Add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order History -->
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Order History</h3>
+                <div id="order-history-list" class="space-y-2 md:space-y-3 mb-6">
+                    <p class="text-center text-gray-400 py-4">No previous orders.</p>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-xs font-bold text-red-600 uppercase mb-3 tracking-wider">Danger Zone</h3>
+                    <button onclick="deleteAccount()" class="w-full border-2 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 py-2.5 md:py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 text-sm md:text-base">
+                        <i class="fa-solid fa-trash text-base md:text-lg"></i> Delete My Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="h-full flex flex-col">
+        <nav class="navbar-modern fixed w-full z-50 top-0 transition-all duration-300" id="navbar">
+            <div class="container mx-auto px-3 md:px-4 py-2 md:py-3">
+                <div class="flex flex-wrap justify-between items-center gap-y-2 gap-x-2 md:gap-x-4">
+                    <!-- Logo -->
+                    <div class="flex items-center gap-2 md:gap-4 cursor-pointer flex-shrink-0" onclick="returnToShop()">
+                        <img src="logo.png" alt="Mekal Mart Logo" class="h-9 md:h-11 w-auto object-contain">
+                        <div class="hidden sm:flex flex-col border-l pl-2 md:pl-4 border-slate-200">
+                            <span class="text-[8px] md:text-[10px] font-black text-igntu-gold uppercase tracking-widest">Official Campus Delivery</span>
+                            <span class="text-xs md:text-sm font-black text-igntu-navy flex items-center gap-1">Mekal Mart <i class="fa-solid fa-chevron-down text-[8px] hidden md:inline"></i></span>
+                        </div>
+                    </div>
+
+                    <!-- Search Bar - Full Width on Mobile -->
+                    <div class="w-full md:flex-1 md:max-w-xl order-3 md:order-none mx-2 md:mx-4">
+                        <div class="search-modern">
+                            <i class="fa-solid fa-search"></i>
+                            <input type="text" oninput="handleSearch(this.value)" placeholder="Search items, food, groceries...">
+                        </div>
+                    </div>
+
+                    <!-- Right Side Actions -->
+                    <div class="flex items-center gap-2 md:gap-3 order-2 md:order-none flex-shrink-0">
+                        <!-- Desktop Auth Buttons -->
+                        <div id="nav-logged-out" class="hidden md:flex items-center gap-2">
+                            <button onclick="openAuthModal('student')" class="bg-igntu-navy text-white px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black hover:bg-igntu-dark hover:shadow-lg transition transform hover:-translate-y-0.5">Sign-In</button>
+                            <button onclick="openAuthModal('vendor')" class="bg-white text-igntu-navy px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-black border border-slate-200 hover:bg-slate-50 transition shadow-sm">Vendor</button>
+                        </div>
+
+                        <!-- Logged In Actions -->
+                        <div id="nav-logged-in" class="hidden items-center gap-2 md:gap-3">
+                            <button id="nav-dashboard-btn" class="hidden bg-igntu-gold text-white px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-black hover:bg-yellow-600 transition flex items-center gap-1 md:gap-2 shadow-lg shadow-igntu-gold/20">
+                                <i class="fa-solid fa-gauge-high text-sm md:text-base"></i> <span class="hidden md:inline">Dashboard</span>
+                            </button>
+                            <button id="nav-role-switcher" onclick="switchUserRole()" class="hidden bg-indigo-100 text-indigo-700 px-2 md:px-3 py-1.5 rounded-lg text-xs md:text-sm font-black hover:bg-indigo-200 transition flex items-center gap-1">
+                                <i class="fa-solid fa-repeat text-xs md:text-sm"></i> <span id="nav-role-switcher-text" class="hidden md:inline">Switch</span>
+                            </button>
+                            <button onclick="openProfile()" class="text-gray-600 hover:text-indigo-600 text-sm md:text-base font-medium flex items-center gap-1">
+                                <i class="fa-solid fa-user text-base md:text-lg"></i> <span class="hidden md:inline text-xs md:text-sm" id="nav-username">Account</span>
+                            </button>
+                            <button onclick="logout()" class="text-gray-400 hover:text-red-500 text-base md:text-lg" title="Logout">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </div>
+
+                        <!-- Cart Button -->
+                        <button onclick="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-full transition" id="cart-btn">
+                            <i class="fa-solid fa-cart-shopping text-lg md:text-xl text-gray-700"></i>
+                            <span id="cart-count" class="cart-badge-counter">0</span>
+                        </button>
+
+                        <!-- Mobile Menu Toggle (if needed) -->
+                        <button onclick="openAuthModal('student')" id="mobile-auth-btn" class="md:hidden bg-igntu-navy text-white px-3 py-1.5 rounded-lg text-xs font-black hover:bg-igntu-dark transition">Login</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div id="shop-view" class="fade-in pt-20 md:pt-16 flex-1 flex flex-col md:flex-row h-screen overflow-hidden">
+            <!-- Sidebar - Hidden on Mobile, Collapsed on Tablet -->
+            <aside class="w-full md:w-56 lg:w-64 bg-white border-r border-gray-100 flex flex-col z-40 shadow-sm md:shadow-none transition-all duration-300 overflow-hidden md:overflow-visible" id="sidebar">
+                <div class="p-3 md:p-4 border-b bg-gradient-to-r from-slate-50 to-blue-50 hidden md:block flex-shrink-0" id="sidebar-header">
+                    <h2 class="text-xs font-bold text-gray-600 uppercase tracking-wider">Select a Store</h2>
+                </div>
+                <div id="shop-list" class="flex md:flex-col overflow-x-auto md:overflow-y-auto p-2 md:p-3 gap-2 md:gap-2 md:h-full no-scrollbar flex-shrink-0 md:flex-shrink-1"></div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-50 p-3 md:p-6 lg:p-8 transition-colors duration-500" id="main-scroll">
+                <!-- Category Filter Bar -->
+                <div class="flex gap-2 md:gap-3 overflow-x-auto pb-3 md:pb-4 mb-4 md:mb-6 no-scrollbar items-center flex-shrink-0">
+                    <button onclick="filterProducts('all')" class="category-pill active flex-shrink-0">
+                        <i class="category-icon fa-solid fa-th-large"></i>
+                        <span>All</span>
+                    </button>
+                    <button onclick="filterProducts('food')" class="category-pill flex-shrink-0">
+                        <i class="category-icon fa-solid fa-hamburger"></i>
+                        <span>Food</span>
+                    </button>
+                    <button onclick="filterProducts('grocery')" class="category-pill flex-shrink-0">
+                        <i class="category-icon fa-solid fa-carrot"></i>
+                        <span>Grocery</span>
+                    </button>
+                    <button onclick="filterProducts('stationary')" class="category-pill flex-shrink-0">
+                        <i class="category-icon fa-solid fa-book"></i>
+                        <span>Stationary</span>
+                    </button>
+                    <button onclick="filterProducts('medicine')" class="category-pill flex-shrink-0">
+                        <i class="category-icon fa-solid fa-capsules"></i>
+                        <span>Medicine</span>
+                    </button>
+                </div>
+
+                <!-- Main Banner -->
+                <div id="main-banner" class="rounded-2xl md:rounded-3xl banner-gradient text-white p-5 md:p-8 lg:p-10 mb-6 md:mb-8 flex items-center justify-between shadow-xl transition-all duration-500 relative overflow-hidden group border border-white/20">
+                    <div class="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-gradient-to-bl from-igntu-gold/30 via-transparent to-transparent blur-[80px] rounded-full -mr-16 md:-mr-20 -mt-16 md:-mt-20"></div>
+                    <div class="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-white/10 to-transparent blur-[60px] rounded-full -ml-16 -mb-16"></div>
+                    <div class="relative z-10 w-full md:w-2/3 pr-2 md:pr-0">
+                        <div class="inline-block bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full mb-3 border border-white/30">
+                            <span class="text-xs font-black text-white uppercase tracking-widest">⚡ 10-15 Mins Delivery</span>
+                        </div>
+                        <h2 class="text-2xl md:text-4xl lg:text-5xl font-outfit font-black mb-2 md:mb-4 leading-tight tracking-tight" id="banner-title">
+                            Empowering <span class="text-igntu-gold">Tribal</span> Communities.<br><span class="text-lg md:text-3xl">Campus Delivery at Ease.</span>
+                        </h2>
+                        <p class="opacity-90 text-xs md:text-sm font-bold text-slate-200 uppercase tracking-widest" id="banner-desc">
+                            Official Mekal Mart Marketplace & Delivery Portal
+                        </p>
+                    </div>
+                    <img src="logo.png" class="w-24 md:w-40 lg:w-48 absolute right-2 md:right-10 opacity-20 transform group-hover:scale-110 transition-transform duration-500" alt="Mekal Mart Logo Overlay">
+                </div>
+
+                <!-- AI RECOMMENDATIONS SECTION -->
+                <div id="ai-recommendations" class="hidden mb-8 md:mb-12">
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h3 class="text-lg md:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-igntu-navy to-igntu-gold flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Smart Suggestions
+                            </h3>
+                            <p class="text-[9px] md:text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest" id="ai-context-text">Powered by Google Gemini AI</p>
+                        </div>
+                    </div>
+                    <div class="relative p-[2px] rounded-2xl bg-gradient-to-r from-igntu-navy via-igntu-gold to-igntu-navy">
+                        <div class="bg-white rounded-2xl p-3 md:p-6 w-full h-full relative z-10">
+                            <div id="ai-loader" class="text-center py-6 hidden">
+                                <i class="fa-solid fa-brain fa-bounce text-3xl md:text-4xl text-igntu-navy mb-3 block"></i>
+                                <span class="text-xs md:text-sm font-bold text-slate-600 tracking-wide">Gemini AI is thinking...</span>
+                            </div>
+                            <div id="ai-products-grid" class="flex gap-3 md:gap-4 overflow-x-auto pb-2 no-scrollbar">
+                                <!-- Suggested items will load here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Section -->
+                <div class="mb-8 md:mb-12">
+                    <h3 id="grid-title" class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6">All Products</h3>
+                    <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 mt-12 md:mt-16 rounded-t-2xl md:rounded-t-3xl">
+                    <div class="container mx-auto px-4 md:px-6 py-8 md:py-12">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8 gap-y-8 md:gap-y-10 mb-8">
+                            <!-- Brand Info -->
+                            <div>
+                                <div class="flex items-center mb-3 md:mb-4 cursor-pointer" onclick="returnToShop()">
+                                    <img src="logo.png" alt="Mekal Mart Logo" class="h-12 md:h-16 w-auto bg-white rounded-xl p-2 shadow-lg">
+                                </div>
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed mb-3 md:mb-4">
+                                    Official Mekal Mart Marketplace
+                                </p>
+                                <p class="text-xs md:text-sm text-slate-400 leading-relaxed">
+                                    The fastest delivery service for university students & staff at Amarkantak.
+                                </p>
+                            </div>
+
+                            <!-- Quick Links -->
+                            <div>
+                                <h3 class="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Quick Links</h3>
+                                <ul class="space-y-2 text-xs md:text-sm">
+                                    <li><a href="#" onclick="filterByShop('all')" class="hover:text-igntu-gold transition">All Products</a></li>
+                                    <li><a href="#" onclick="filterProducts('food')" class="hover:text-igntu-gold transition">Order Food</a></li>
+                                    <li><a href="#" onclick="filterProducts('medicine')" class="hover:text-igntu-gold transition">Medicines</a></li>
+                                    <li><a href="#" onclick="openProfile()" class="hover:text-igntu-gold transition">My Account</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Contact Info -->
+                            <div>
+                                <h3 class="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Contact Us</h3>
+                                <ul class="space-y-2 md:space-y-3 text-xs md:text-sm">
+                                    <li class="flex items-start gap-2 md:gap-3">
+                                        <i class="fa-solid fa-location-dot mt-1 text-igntu-gold flex-shrink-0"></i>
+                                        <span>Indira Gandhi National Tribal University Campus,<br>Amarkantak, MP, India</span>
+                                    </li>
+                                    <li class="flex items-center gap-2 md:gap-3">
+                                        <i class="fa-solid fa-phone text-igntu-gold flex-shrink-0"></i>
+                                        <span>+91 91422 32046</span>
+                                    </li>
+                                    <li class="flex items-center gap-2 md:gap-3">
+                                        <i class="fa-solid fa-envelope text-igntu-gold flex-shrink-0"></i>
+                                        <a href="mailto:support@mekalmart.com" class="hover:text-igntu-gold transition">support@mekalmart.com</a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Social Links -->
+                            <div>
+                                <h3 class="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Follow Us</h3>
+                                <div class="flex gap-2 md:gap-3">
+                                    <a href="https://www.instagram.com/abhii_shaik?igsh=NDdmdGZ3azYycHA2" class="w-9 md:w-10 h-9 md:h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-pink-600 text-white transition text-sm md:text-base">
+                                        <i class="fa-brands fa-instagram"></i>
+                                    </a>
+                                    <a href="https://www.facebook.com/profile.php?id=100027029204780" class="w-9 md:w-10 h-9 md:h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-blue-600 text-white transition text-sm md:text-base">
+                                        <i class="fa-brands fa-facebook-f"></i>
+                                    </a>
+                                    <a href="https://x.com/abhishekkk_16?t=rTcAdRHqecDVB0VsTTHC9g&s=09" class="w-9 md:w-10 h-9 md:h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-sky-500 text-white transition text-sm md:text-base">
+                                        <i class="fa-brands fa-twitter"></i>
+                                    </a>
+                                    <a href="#" class="w-9 md:w-10 h-9 md:h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-green-500 text-white transition text-sm md:text-base">
+                                        <i class="fa-brands fa-whatsapp"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Newsletter -->
+                            <div>
+                                <h3 class="text-white font-bold mb-3 md:mb-4 text-sm md:text-base">Newsletter</h3>
+                                <div class="flex gap-0">
+                                    <input type="email" placeholder="Enter email" class="flex-1 px-3 md:px-4 py-2 md:py-2.5 bg-gray-700 border border-gray-600 rounded-l-lg text-xs md:text-sm text-white placeholder-gray-400 focus:outline-none focus:border-igntu-gold transition">
+                                    <button class="bg-igntu-gold px-3 md:px-4 py-2 md:py-2.5 rounded-r-lg text-white hover:bg-yellow-600 transition text-xs md:text-sm">
+                                        <i class="fa-solid fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Copyright -->
+                        <div class="border-t border-gray-700 pt-6 text-center text-xs text-gray-500">
+                            <p>&copy; 2026 Mekal Mart Campus Delivery. All rights reserved.</p>
+                            <p class="mt-2">Developed by Abhishek Kumar</p>
+                        </div>
+                    </div>
+                </footer>
+            </main>
+        </div>
+
+        <div id="checkout-view" class="hidden pt-20 md:pt-24 container mx-auto px-3 md:px-4 pb-16 md:pb-20 fade-in h-screen overflow-y-auto">
+            <button onclick="returnToShop()" class="mb-4 md:mb-6 text-indigo-600 font-bold hover:text-indigo-700 hover:underline flex items-center gap-2 text-sm md:text-base transition">
+                <i class="fa-solid fa-arrow-left"></i> Back to Shop
+            </button>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+                <!-- Main Form -->
+                <div class="lg:col-span-2 space-y-4 md:space-y-6">
+                    <!-- Delivery Details Card -->
+                    <div class="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition">
+                        <h2 class="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-gray-800">
+                            <i class="fa-solid fa-location-dot text-indigo-600"></i> Delivery Details
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">Full Name</label>
+                                <input type="text" id="checkout-name" placeholder="John Doe" class="input-modern w-full">
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">Phone Number</label>
+                                <input type="tel" id="checkout-phone" placeholder="10 digits" maxlength="10" class="input-modern w-full">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">Email Address</label>
+                                <input type="email" id="checkout-email" placeholder="example@gmail.com" class="input-modern w-full">
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">Hostel / Department</label>
+                                <select id="checkout-hostel" class="input-modern w-full">
+                                    <option>Govind Guru Boys Hostel (GGBH)</option>
+                                    <option>Rani Durgawati Girls Hostel (RDGH)</option>
+                                    <option>New Boys Hostel</option>
+                                    <option>Senior Girls Hostel</option>
+                                    <option>OBC Boys Hostel</option>
+                                    <option>OBC Girls Hostel</option>
+                                    <option>Sone Boys Hostel</option>
+                                    <option>Narmada Girls Hostel</option>
+                                    <option>Science Dept.</option>
+                                    <option>Commerce Dept.</option>
+                                    <option>Pharmacy Dept.</option>
+                                    <option>Central Library</option>
+                                    <option>Staff Quarters</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1.5 md:mb-2">Room / Office No</label>
+                                <input type="text" id="checkout-room" placeholder="e.g. 304-B" class="input-modern w-full">
+                            </div>
+                        </div>
+
+                        <!-- Location Detection -->
+                        <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-100">
+                            <label class="block text-xs md:text-sm font-medium text-gray-700 mb-2 md:mb-3">Or Detect Location</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="checkout-address" placeholder="Detected address will appear here..." class="input-modern w-full bg-gray-100 cursor-not-allowed text-xs md:text-sm" readonly>
+                                <button type="button" onclick="detectLocation()" class="bg-white text-secondary border-2 border-secondary px-3 md:px-6 py-2 md:py-3 rounded-lg font-montserrat font-bold hover:bg-secondary/10 hover:text-indigo-600 hover:border-indigo-600 transition flex items-center gap-1 md:gap-2 whitespace-nowrap text-xs md:text-sm">
+                                    <i class="fa-solid fa-location-crosshairs text-base md:text-lg"></i> <span class="hidden md:inline">Locate</span>
+                                </button>
+                            </div>
+                            <div id="google-map" style="width: 100%; height: 200px; border-radius: 10px; margin-top: 10px; display: none; border: 1px solid #ccc;"></div>
+                        </div>
+                    </div>
+
+                    <!-- UPI Payment Section -->
+                    <div id="upi-payment-section" class="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-gray-100 hidden hover:shadow-lg transition">
+                        <h2 class="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-gray-800">
+                            <i class="fa-solid fa-qrcode text-indigo-600"></i> Scan UPI QR
+                        </h2>
+                        <div class="flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                            <img id="upi-qr-image" src="" alt="QR Code" class="w-40 md:w-48 h-40 md:h-48 object-contain mb-3 md:mb-4 border-2 border-white shadow-sm rounded-lg">
+                            <p class="text-sm md:text-base font-bold text-gray-800">Total: <span id="qr-amount" class="text-igntu-gold">₹0.00</span></p>
+                            <p class="text-xs md:text-sm text-gray-500 mt-1 md:mt-2">Scan with GPay / PhonePe / Paytm</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary Sidebar -->
+                <div class="lg:col-span-1">
+                    <!-- Payment Method Card -->
+                    <div class="bg-white p-4 md:p-6 rounded-2xl shadow-md border border-indigo-100 mb-4 md:mb-6 hover:shadow-lg transition">
+                        <h3 class="text-lg md:text-base font-bold mb-3 md:mb-4">Payment Method</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 p-3 border-2 border-indigo-100 rounded-xl cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition">
+                                <input type="radio" name="payment_method" value="wallet" checked onchange="togglePaymentUI()" class="w-4 h-4 text-indigo-600">
+                                <div class="flex-1">
+                                    <p class="font-bold text-sm">Pay with Wallet</p>
+                                    <p class="text-xs text-gray-500">Fast & Secure</p>
+                                </div>
+                                <i class="fa-solid fa-wallet text-indigo-600 text-lg"></i>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 border-2 border-gray-100 rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-300 transition">
+                                <input type="radio" name="payment_method" value="upi" onchange="togglePaymentUI()" class="w-4 h-4 text-indigo-600">
+                                <div class="flex-1">
+                                    <p class="font-bold text-sm">Scan UPI QR</p>
+                                    <p class="text-xs text-gray-500">GPay, PhonePe, Paytm</p>
+                                </div>
+                                <i class="fa-solid fa-qrcode text-indigo-600 text-lg"></i>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary Card -->
+                    <div class="bg-gradient-to-br from-white to-indigo-50 p-4 md:p-6 rounded-2xl shadow-xl border-2 border-indigo-100 sticky top-20 md:top-24 hover:shadow-2xl transition">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800">Order Summary</h3>
+                        <div id="checkout-items" class="space-y-2 md:space-y-3 max-h-60 overflow-y-auto pr-2 mb-4 md:mb-6 text-xs md:text-sm"></div>
+                        <div class="border-t-2 border-indigo-100 pt-3 md:pt-4 space-y-2 md:space-y-3 mb-4 md:mb-6">
+                            <div class="flex justify-between text-gray-600 text-xs md:text-sm">
+                                <span>Subtotal</span>
+                                <span id="summary-subtotal">₹0.00</span>
+                            </div>
+                            <div class="flex justify-between text-gray-600 text-xs md:text-sm">
+                                <span>Delivery Fee</span>
+                                <span id="summary-delivery-fee">₹10.00</span>
+                            </div>
+                            <div class="flex justify-between text-lg md:text-xl font-bold text-indigo-900 pt-2 md:pt-3 border-t-2 border-indigo-100">
+                                <span>Total</span>
+                                <span id="summary-total" class="text-igntu-gold">₹0.00</span>
+                            </div>
+                        </div>
+                        <button onclick="placeOrder()" class="w-full bg-igntu-gold text-igntu-navy py-3 md:py-3.5 px-4 md:px-6 rounded-xl font-montserrat font-bold shadow-lg shadow-igntu-gold/30 hover:shadow-xl hover:shadow-igntu-gold/40 transform hover:-translate-y-1 active:scale-95 transition text-sm md:text-base">
+                            Confirm Payment & Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Sidebar -->
+        <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full md:w-96 glass-panel shadow-2xl z-50 hide-cart cart-slide flex flex-col border-l border-white/50 rounded-l-3xl md:rounded-none">
+            <!-- Cart Header -->
+            <div class="p-4 md:p-5 border-b border-white/20 flex justify-between items-center bg-gradient-to-r from-violet-600 to-indigo-600 text-white flex-shrink-0">
+                <h2 class="text-lg md:text-xl font-outfit font-bold">Your Cart</h2>
+                <button onclick="toggleCart()" class="hover:text-gray-200 text-lg md:text-xl transition">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items -->
+            <div id="cart-items" class="flex-1 overflow-y-auto p-4 md:p-5 space-y-3 md:space-y-4"></div>
+
+            <!-- Cart Footer -->
+            <div class="p-4 md:p-6 border-t border-white/30 bg-white/50 backdrop-blur-md flex-shrink-0">
+                <div class="flex justify-between text-base md:text-lg font-outfit font-bold mb-4 text-slate-800">
+                    <span>Subtotal</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+                <button onclick="goToCheckout()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white py-3 md:py-4 px-4 md:px-6 rounded-xl md:rounded-2xl font-montserrat font-bold shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transform hover:-translate-y-1 active:scale-95 transition text-sm md:text-base">
+                    <i class="fa-solid fa-credit-card mr-2"></i> Proceed to Checkout
+                </button>
+        </div>
+        <div id="overlay" onclick="toggleCart()" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+        <div id="toast"
+            class="fixed top-24 right-4 md:right-10 z-[90] bg-white border-l-4 shadow-2xl rounded-lg p-4 flex items-center gap-4 transition-all duration-500 transform translate-x-full opacity-0 pointer-events-none min-w-[300px]">
+            <div id="toast-icon-container" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0">
+                <i id="toast-icon"></i>
+            </div>
+            <div>
+                <h4 id="toast-title" class="font-bold text-gray-800 text-sm">Notification</h4>
+                <p id="toast-message" class="text-xs text-gray-500">Message here</p>
+            </div>
+        </div>
+
+        <div id="tracking-modal"
+            class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300 hidden">
+            <div class="bg-white w-full sm:w-96 p-6 sm:rounded-2xl rounded-t-2xl shadow-2xl pointer-events-auto transform translate-y-full sm:translate-y-0 transition-transform duration-500"
+                id="tracking-card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Tracking Order</h2><button onclick="closeTracking()"
+                        class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="text-center mb-6">
+                    <p class="text-gray-500 text-sm uppercase tracking-wide mb-1">Estimated Delivery</p>
+                    <h1 class="text-4xl font-black text-indigo-600" id="countdown-timer">30:00</h1>
+                    <p class="text-xs text-gray-400 mt-1">mins remaining</p>
+                </div>
+                <div class="space-y-6">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="track-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-1000"
+                            style="width: 0%"></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3 opacity-50 transition" id="step-1">
+                            <div
+                                class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                                <i class="fa-solid fa-check"></i>
+                            </div><span class="font-medium">Order Accepted</span>
+                        </div>
+                        <div class="flex items-center gap-3 opacity-50 transition" id="step-2">
+                            <div
+                                class="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                                <i class="fa-solid fa-box"></i>
+                            </div><span class="font-medium">Packing Items</span>
+                        </div>
+                        <div class="flex items-center gap-3 opacity-50 transition" id="step-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <i class="fa-solid fa-motorcycle"></i>
+                            </div><span class="font-medium">Handed to Delivery
+                                Agent</span>
+                        </div>
+                        <div class="flex items-center gap-3 opacity-50 transition" id="step-4">
+                            <div
+                                class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <i class="fa-solid fa-home"></i>
+                            </div><span class="font-medium">Arrived at
+                                Hostel!</span>
+                        </div>
+                    </div>
+
+                    <div id="agent-info-container"
+                        class="hidden mt-6 bg-teal-50 border border-teal-100 rounded-lg p-4 flex items-center gap-4 relative">
+                        <div
+                            class="w-10 h-10 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center text-xl shrink-0 overflow-hidden">
+                            <img id="tr-agent-image" src="" class="w-full h-full object-cover hidden" alt="Agent">
+                            <i id="tr-agent-icon" class="fa-solid fa-helmet-safety"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs font-bold text-teal-800 uppercase tracking-widest hidden sm:block">
+                                Your Delivery Partner</p>
+                            <p class="font-bold text-gray-900" id="tr-agent-name">Agent Name</p>
+                            <a href="#" id="tr-agent-phone"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm mt-1">
+                                <i class="fa-solid fa-phone"></i> <span>Call</span>
+                            </a>
+                        </div>
+                        <div class="text-center bg-white p-2 rounded border border-teal-200">
+                            <p class="text-[10px] font-black text-teal-600 uppercase tracking-widest">Delivery PIN</p>
+                            <p class="text-lg font-black tracking-widest text-indigo-700" id="tr-delivery-pin">----</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="script.js?v=1.2"></script>
+</body>
+
+</html>

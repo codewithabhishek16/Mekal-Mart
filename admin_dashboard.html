@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders | Mekal Mart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1B4332',
+                        secondary: '#219EBC',
+                        action: '#FFB703',
+                        bglight: '#F9FBFF',
+                        ink: '#023047',
+                        igntu: {
+                            navy: '#1B4332',
+                            gold: '#FFB703',
+                            dark: '#112d22',
+                        },
+                        indigo: {
+                            50: '#F0F9FB',
+                            100: '#E0F3F7',
+                            200: '#BCE2EC',
+                            300: '#90CDE0',
+                            400: '#5FB5CE',
+                            500: '#219EBC',
+                            600: '#1A7E97',
+                            700: '#146073',
+                            800: '#0F4755',
+                            900: '#0B333D',
+                            950: '#072027',
+                        },
+                        violet: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        purple: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#023047',
+                            900: '#011F2E',
+                            950: '#00131C',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Toast Animation */
+        .toast-enter { transform: translateX(100%); opacity: 0; }
+        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .toast-exit { transform: translateX(0); opacity: 1; }
+        .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col">
+    
+    <nav class="glass bg-gradient-to-r from-primary to-secondary text-white p-4 shadow-xl z-30 border-b border-indigo-500/20">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-y-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-lg text-white shadow-inner">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h1 class="text-xl font-montserrat font-bold tracking-wide">Orders</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="vendor_dashboard.html" class="text-sm font-montserrat font-bold text-indigo-100 hover:text-white transition"><i class="fa-solid fa-store mr-1"></i> Vendor Portal</a>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-montserrat font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="container mx-auto max-w-6xl">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-montserrat font-bold text-slate-800" id="dashboard-title">Dashboard</h2>
+                    <p class="text-slate-500 text-sm mt-1" id="dashboard-subtitle">Manage student orders in real-time.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="admin-tab-container" class="bg-slate-100 p-1 rounded-xl shadow-inner flex">
+                        <button onclick="switchAdminTab('orders')" id="tab-orders" class="px-5 py-2 text-xs font-montserrat font-bold rounded-lg bg-white text-primary shadow-sm transition">ORDERS</button>
+                        <button onclick="switchAdminTab('approvals')" id="tab-approvals" class="px-5 py-2 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition">APPROVALS</button>
+                    </div>
+                    <button id="btn-refresh" onclick="loadOrders()" class="bg-transparent text-secondary border-2 border-secondary hover:bg-secondary/10 hover:text-[#1A7E97] hover:border-[#1A7E97] px-4 py-2 rounded-lg font-montserrat font-bold shadow-sm transition flex items-center gap-2 text-sm">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Orders Section -->
+            <div id="orders-section">
+                <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <!-- Approvals Section -->
+            <div id="approvals-section" class="hidden space-y-10">
+                <!-- Pending Vendors -->
+                <div>
+                    <h3 class="text-xl font-bold font-montserrat text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-store text-indigo-500"></i> Pending Vendors
+                    </h3>
+                    <div id="pending-vendors-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Pending Riders -->
+                <div>
+                    <h3 class="text-xl font-bold font-montserrat text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-motorcycle text-emerald-500"></i> Pending Riders
+                    </h3>
+                    <div id="pending-riders-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Pending Products -->
+                <div>
+                    <h3 class="text-xl font-bold font-montserrat text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pizza-slice text-amber-500"></i> Pending Products
+                    </h3>
+                    <div id="pending-products-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <script src="config.js"></script>
+    <script>
+        // 1. Check Auth on Load
+        const adminUser = localStorage.getItem('uniMartAdmin');
+        const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
+        if(!adminUser && (!activeUser || activeUser.role !== 'vendor')) {
+            window.location.href = 'admin_login.html';
+        }
+
+        function logout() {
+            if(adminUser) {
+                localStorage.removeItem('uniMartAdmin');
+                window.location.href = 'admin_login.html';
+            } else {
+                localStorage.removeItem('uniMartActiveUser');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 2. Load Orders Function
+        async function loadOrders() {
+            const container = document.getElementById('orders-container');
+            
+            // Only show spinner if empty
+            if(container.children.length === 0) {
+                container.innerHTML = '<p class="text-center w-full col-span-3 text-gray-400 py-10">Loading orders...</p>';
+            }
+            
+            try {
+                // Fetch with Cache Busting (?t=...)
+                const res = await fetch(`${API_URL}/admin/orders?t=` + new Date().getTime(), {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('uniMartToken') }
+                });
+                
+                // Catch Server Errors (HTML returned instead of JSON)
+                if (!res.ok) throw new Error("Server Error");
+                
+                const orders = await res.json();
+                
+                container.innerHTML = '';
+                
+                // Handle Empty List
+                if(!Array.isArray(orders) || orders.length === 0) {
+                    container.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-20 opacity-50"><i class="fa-solid fa-clipboard-check text-6xl mb-4 text-gray-300"></i><p class="text-xl font-bold text-gray-500">All caught up!</p><p class="text-sm text-gray-400">No pending orders found.</p></div>';
+                    return;
+                }
+
+                // Render Orders
+                orders.forEach(order => {
+                    const statusBadge = getStatusBadge(order.status);
+                    
+                    // CLEAN PRICE: The API now sends clean numbers, so we just add the symbol.
+                    let amount = order.total_amount || "0";
+                    amount = amount.replace('₹', '');
+
+                    container.innerHTML += `
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition duration-200 flex flex-col">
+                            <div class="p-4 border-b border-gray-50 flex justify-between items-start bg-gray-50/50">
+                                <div>
+                                    <span class="font-bold text-gray-900 text-lg">#${order.order_id}</span>
+                                    <p class="text-xs text-gray-400 mt-0.5"><i class="fa-regular fa-clock mr-1"></i> ${order.created_at}</p>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="p-5 flex-1">
+                                <div class="mb-4">
+                                    <h3 class="font-bold text-gray-800 text-lg mb-1">${order.customer_name}</h3>
+                                    <div class="text-sm text-gray-500 space-y-1">
+                                        <p><i class="fa-solid fa-location-dot w-5 text-center text-indigo-400"></i> ${order.hostel}, Room ${order.room_no}</p>
+                                        <p><i class="fa-solid fa-phone w-5 text-center text-indigo-400"></i> ${order.phone}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-indigo-50/50 p-3 rounded-lg border border-indigo-50 text-sm text-gray-700 mb-4 whitespace-pre-line leading-relaxed">
+                                    <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">Items</span>
+                                    ${order.items}
+                                </div>
+                                ${order.pickup_pin ? `
+                                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-100 text-sm text-yellow-800 text-center mb-2">
+                                    <span class="font-bold uppercase text-xs tracking-wider">Pickup PIN (Agent)</span><br>
+                                    <span class="font-black text-2xl tracking-widest text-yellow-600">${order.pickup_pin}</span>
+                                </div>` : ''}
+                            </div>
+
+                            <div class="p-4 bg-gray-50 border-t border-gray-100 mt-auto">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-sm text-gray-500 font-medium">Total Amount</span>
+                                    <span class="text-xl font-black text-gray-800">₹${amount}</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5">
+                                    <button onclick="updateStatus('${order.order_id}', 'Accepted')" class="py-2 rounded-lg text-xs font-montserrat font-bold transition bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 flex justify-center items-center gap-1" title="Accept"><i class="fa-solid fa-check"></i> <span class="hidden md:inline">Accept</span></button>
+                                    <button onclick="updateStatus('${order.order_id}', 'Packing')" class="py-2 rounded-lg text-xs font-montserrat font-bold transition bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-100 flex justify-center items-center gap-1" title="Packing"><i class="fa-solid fa-box"></i> <span class="hidden md:inline">Packing</span></button>
+                                    <button onclick="updateStatus('${order.order_id}', 'Picked Up')" class="py-2 px-1 rounded-lg text-[10px] md:text-xs font-montserrat font-bold transition bg-purple-50 text-purple-600 hover:purple-100 border border-purple-100 flex justify-center items-center gap-1" title="Hand over"><i class="fa-solid fa-motorcycle"></i> <span class="hidden md:inline">Hand Over</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                console.error("Dashboard Error:", e);
+                // If parsing fails, don't show alert loop, just log it.
+                // container.innerHTML = '<p class="text-center text-red-400 col-span-full">Connection Error. Retrying...</p>';
+            }
+        }
+
+        async function updateStatus(id, status) {
+            try {
+                const res = await fetch(`${API_URL}/admin/update_status`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('uniMartToken')
+                    },
+                    body: JSON.stringify({ order_id: id, status: status })
+                });
+                const data = await res.json();
+
+                if(data.status === 'success') {
+                    showToast(`Order marked as ${status}`, "success");
+                    loadOrders(); // Refresh UI
+                } else {
+                    showToast("Failed to update status", "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        function getStatusBadge(status) {
+            const styles = {
+                'Pending': 'bg-gray-100 text-gray-600 border-gray-200',
+                'Accepted': 'bg-blue-100 text-blue-700 border-blue-200',
+                'Packing': 'bg-orange-100 text-orange-700 border-orange-200',
+                'Picked Up': 'bg-purple-100 text-purple-700 border-purple-200',
+                'Handed to Delivery Agent': 'bg-purple-100 text-purple-700 border-purple-200',
+                'Delivered': 'bg-green-100 text-green-700 border-green-200'
+            };
+            const icons = {
+                'Pending': 'fa-hourglass',
+                'Accepted': 'fa-thumbs-up',
+                'Packing': 'fa-box-open',
+                'Picked Up': 'fa-motorcycle',
+                'Handed to Delivery Agent': 'fa-motorcycle',
+                'Delivered': 'fa-flag-checkered'
+            };
+            
+            const style = styles[status] || styles['Pending'];
+            const icon = icons[status] || icons['Pending'];
+            
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-bold border ${style} flex items-center gap-1.5 shadow-sm"><i class="fa-solid ${icon}"></i> ${status}</span>`;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check text-green-500 text-xl"></i>' : '<i class="fa-solid fa-circle-xmark text-red-500 text-xl"></i>';
+            const borderClass = type === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500';
+            
+            toast.className = `pointer-events-auto bg-white shadow-xl rounded-r-lg p-4 flex items-center gap-4 min-w-[300px] transform transition-all duration-300 toast-enter ${borderClass}`;
+            toast.innerHTML = `
+                ${icon}
+                <div>
+                    <h4 class="font-bold text-gray-800 text-sm capitalize">${type}</h4>
+                    <p class="text-xs text-gray-500">${message}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-exit-active');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 3000);
+        }
+
+        let activeAdminTab = 'orders';
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            const ordersSec = document.getElementById('orders-section');
+            const approvalsSec = document.getElementById('approvals-section');
+            const tabOrdersBtn = document.getElementById('tab-orders');
+            const tabApprovalsBtn = document.getElementById('tab-approvals');
+            const refreshBtn = document.getElementById('btn-refresh');
+
+            if (tab === 'orders') {
+                ordersSec.classList.remove('hidden');
+                approvalsSec.classList.add('hidden');
+                tabOrdersBtn.className = "px-5 py-2 text-xs font-montserrat font-bold rounded-lg bg-white text-primary shadow-sm transition";
+                tabApprovalsBtn.className = "px-5 py-2 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition";
+                refreshBtn.onclick = loadOrders;
+                loadOrders();
+            } else {
+                ordersSec.classList.add('hidden');
+                approvalsSec.classList.remove('hidden');
+                tabOrdersBtn.className = "px-5 py-2 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition";
+                tabApprovalsBtn.className = "px-5 py-2 text-xs font-montserrat font-bold rounded-lg bg-white text-primary shadow-sm transition";
+                refreshBtn.onclick = loadPendingRequests;
+                loadPendingRequests();
+            }
+        }
+
+        async function loadPendingRequests() {
+            const vendorsList = document.getElementById('pending-vendors-list');
+            const ridersList = document.getElementById('pending-riders-list');
+            const productsList = document.getElementById('pending-products-list');
+
+            if (vendorsList.children.length === 0) vendorsList.innerHTML = '<p class="text-slate-400 text-sm py-4">Loading pending vendors...</p>';
+            if (ridersList.children.length === 0) ridersList.innerHTML = '<p class="text-slate-400 text-sm py-4">Loading pending riders...</p>';
+            if (productsList.children.length === 0) productsList.innerHTML = '<p class="text-slate-400 text-sm py-4">Loading pending products...</p>';
+
+            try {
+                const res = await fetch(`${API_URL}/admin/pending-requests?t=` + new Date().getTime(), {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('uniMartToken') }
+                });
+                if (!res.ok) throw new Error("Failed to load approvals");
+                const data = await res.json();
+
+                // Render Vendors
+                vendorsList.innerHTML = '';
+                if (!data.vendors || data.vendors.length === 0) {
+                    vendorsList.innerHTML = '<div class="col-span-full py-6 text-center text-slate-400 text-sm font-bold bg-white rounded-2xl border border-slate-100"><i class="fa-solid fa-store-slash text-2xl mb-2 text-slate-300 block"></i>No pending vendors.</div>';
+                } else {
+                    data.vendors.forEach(v => {
+                        vendorsList.innerHTML += `
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition">
+                                <div class="flex items-center gap-4">
+                                    <img src="${v.shop_image || 'store-placeholder.png'}" class="w-12 h-12 rounded-xl object-cover shadow-sm">
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">${v.shop_name}</h4>
+                                        <p class="text-xs text-slate-500 capitalize">${v.shop_category || 'General'}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5"><i class="fa-regular fa-envelope"></i> ${v.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="approveUser(${v.user_id}, 'vendor', 'approve')" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                                    <button onclick="approveUser(${v.user_id}, 'vendor', 'reject')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render Riders
+                ridersList.innerHTML = '';
+                if (!data.riders || data.riders.length === 0) {
+                    ridersList.innerHTML = '<div class="col-span-full py-6 text-center text-slate-400 text-sm font-bold bg-white rounded-2xl border border-slate-100"><i class="fa-solid fa-user-slash text-2xl mb-2 text-slate-300 block"></i>No pending riders.</div>';
+                } else {
+                    data.riders.forEach(r => {
+                        ridersList.innerHTML += `
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between hover:shadow-md transition">
+                                <div class="flex items-center gap-4">
+                                    <img src="${r.profile_image || 'logo.png'}" class="w-12 h-12 rounded-xl object-cover shadow-sm">
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">${r.partner_name}</h4>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-motorcycle"></i> ${r.vehicle_number || 'No Vehicle'}</p>
+                                        <p class="text-[10px] text-slate-400 mt-0.5"><i class="fa-regular fa-envelope"></i> ${r.email}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="approveUser(${r.user_id}, 'partner', 'approve')" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                                    <button onclick="approveUser(${r.user_id}, 'partner', 'reject')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Render Products
+                productsList.innerHTML = '';
+                if (!data.products || data.products.length === 0) {
+                    productsList.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 text-sm font-bold bg-white rounded-2xl border border-slate-100"><i class="fa-solid fa-pizza-slice text-2xl mb-2 text-slate-300 block"></i>No pending products.</div>';
+                } else {
+                    data.products.forEach(p => {
+                        productsList.innerHTML += `
+                            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <img src="${p.img || 'store-placeholder.png'}" class="w-12 h-12 rounded-xl object-cover shadow-sm">
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 leading-tight">${p.name}</h4>
+                                        <p class="text-xs text-slate-500 mt-0.5 capitalize">${p.category} • <span class="font-bold text-slate-700">₹${p.price}</span></p>
+                                        <p class="text-[10px] text-slate-400 mt-1"><i class="fa-solid fa-store text-[9px]"></i> ${p.shop_name || p.shop_id}</p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 justify-end border-t pt-3">
+                                    <button onclick="approveProduct(${p.id}, 'approve')" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                                    <button onclick="approveProduct(${p.id}, 'reject')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg text-xs font-bold transition flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Reject</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+            } catch (e) {
+                showToast("Failed to load pending requests", "error");
+            }
+        }
+
+        async function approveUser(userId, role, action) {
+            try {
+                const res = await fetch(`${API_URL}/admin/approve-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('uniMartToken')
+                    },
+                    body: JSON.stringify({ user_id: userId, role: role, action: action })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast(`User ${action}d successfully!`, "success");
+                    loadPendingRequests();
+                } else {
+                    showToast(data.message || "Failed to process user action", "error");
+                }
+            } catch (e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        async function approveProduct(productId, action) {
+            try {
+                const res = await fetch(`${API_URL}/admin/approve-product`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('uniMartToken')
+                    },
+                    body: JSON.stringify({ product_id: productId, action: action })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast(`Product ${action}d successfully!`, "success");
+                    loadPendingRequests();
+                } else {
+                    showToast(data.message || "Failed to process product action", "error");
+                }
+            } catch (e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        // Init
+        loadOrders();
+        setInterval(() => {
+            if (!document.hidden) {
+                if (activeAdminTab === 'orders') {
+                    loadOrders();
+                } else {
+                    loadPendingRequests();
+                }
+            }
+        }, 10000); // Auto-refresh active tab every 10s
+    </script>
+</body>
+</html>

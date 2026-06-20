@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: unimart_db
+    restart: always
+    environment:
+      POSTGRES_DB: unimart
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: unimart_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=unimart
+      - DEV_MODE=false
+      - JWT_SECRET=fdf4671e2efd97bb1f09c25603deca73c713b194d2bb78f0d86de8583fb20625
+      - ALLOWED_ORIGINS=*
+      - DELIVERY_FEE=10
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  postgres_data:

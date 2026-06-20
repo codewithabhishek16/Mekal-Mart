@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Login | Mekal Mart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1B4332',
+                        secondary: '#219EBC',
+                        action: '#FFB703',
+                        bglight: '#F9FBFF',
+                        ink: '#023047',
+                        igntu: {
+                            navy: '#1B4332',
+                            gold: '#FFB703',
+                            dark: '#112d22',
+                        },
+                        indigo: {
+                            50: '#F0F9FB',
+                            100: '#E0F3F7',
+                            200: '#BCE2EC',
+                            300: '#90CDE0',
+                            400: '#5FB5CE',
+                            500: '#219EBC',
+                            600: '#1A7E97',
+                            700: '#146073',
+                            800: '#0F4755',
+                            900: '#0B333D',
+                            950: '#072027',
+                        },
+                        violet: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        purple: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#023047',
+                            900: '#011F2E',
+                            950: '#00131C',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-outfit {
+            font-family: 'Montserrat', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 flex items-center justify-center min-h-screen px-4">
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden">
+        <!-- Background decorative gradients -->
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="text-center mb-8 relative">
+            <div class="mx-auto w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 mb-4">
+                <i class="fa-solid fa-store-slash text-2xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-black font-outfit text-white tracking-tight">Vendor Dashboard</h2>
+            <p class="text-slate-400 text-xs mt-1">Access your campus shop management portal</p>
+        </div>
+
+        <!-- Google Sign-In Container -->
+        <div class="space-y-6">
+            <button onclick="signInWithGoogle(event)" id="btn-google" 
+                class="w-full py-4 bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 rounded-2xl font-montserrat font-bold shadow-md transition flex items-center justify-center gap-3">
+                <i class="fa-brands fa-google text-rose-500 text-lg"></i>
+                <span>Sign in with Google</span>
+            </button>
+            <div class="text-center" id="mock-login-container">
+                <a href="#" onclick="triggerMockLogin(); return false;" class="text-xs text-slate-500 hover:text-white hover:underline">
+                    Local Developer Bypass (Mock Login)
+                </a>
+            </div>
+        </div>
+
+        <p id="msg" class="text-center text-rose-500 mt-6 text-sm font-semibold min-h-[20px]"></p>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mockLoginContainer = document.getElementById('mock-login-container');
+            if (mockLoginContainer && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                mockLoginContainer.classList.add('hidden');
+            }
+        });
+
+        // Initialize Supabase
+        const supabaseClient = (typeof supabase !== 'undefined' && typeof SUPABASE_URL !== 'undefined' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY')
+            ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
+
+        function showMessage(text, isError = true) {
+            const el = document.getElementById('msg');
+            el.innerText = text;
+            el.className = isError ? "text-center text-rose-500 mt-6 text-sm font-semibold min-h-[20px]" : "text-center text-emerald-400 mt-6 text-sm font-semibold min-h-[20px]";
+        }
+
+        async function signInWithGoogle(e) {
+            if (!supabaseClient || (e && e.shiftKey)) {
+                triggerMockLogin();
+                return;
+            }
+            
+            // Set role in localStorage so callback handles it
+            localStorage.setItem('selectedRoleForGoogleAuth', 'vendor');
+            
+            const redirectUrl = window.location.origin + window.location.pathname.replace('admin_login.html', 'index.html');
+            console.log("Redirecting to Google with callback:", redirectUrl);
+
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectUrl
+                }
+            });
+
+            if (error) {
+                showMessage("Google Sign-In Error: " + error.message, true);
+                triggerMockLogin();
+            }
+        }
+
+        async function triggerMockLogin() {
+            const email = prompt("Enter email for Mock Vendor Google login (Dev Bypass):", "vendor@example.com");
+            if (!email) return;
+            const name = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            
+            try {
+                const res = await fetch(`${API_URL}/auth/google-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        name: name,
+                        avatar_url: `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`,
+                        selected_role: 'vendor'
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'success') {
+                    showMessage("Mock Login successful!", false);
+                    localStorage.setItem('uniActiveRole', 'vendor');
+                    localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
+                    localStorage.setItem('uniMartToken', data.token);
+                    setTimeout(() => {
+                        window.location.href = 'admin_dashboard.html';
+                    }, 1000);
+                } else {
+                    showMessage(data.detail || "Mock login failed", true);
+                }
+            } catch (e) {
+                showMessage("Sync Error: " + e.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

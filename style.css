@@ -1,0 +1,814 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+/* =========================================
+   1. GLOBAL & UTILITIES
+   ========================================= */
+/* Custom Scrollbar - Slim and Modern */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(33, 158, 188, 0.4);
+    /* Narmada Blue fading */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(33, 158, 188, 0.8);
+}
+
+/* Smooth Scrolling & Font Assignments */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFB 50%, #F0F7FF 100%);
+    background-attachment: fixed;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(27, 67, 50, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 183, 3, 0.02) 0%, transparent 50%);
+}
+
+/* Hide Scrollbar Utility (for horizontal lists) */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Custom Glassmorphism Classes */
+.glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 77, 102, 0.1);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* =========================================
+   2. ANIMATIONS & TRANSFORMATIONS
+   ========================================= */
+/* Shop Item Base */
+.shop-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shop-item:hover {
+    transform: translateY(-2px);
+}
+
+.shop-item:active {
+    transform: scale(0.95);
+}
+
+/* Cart Sidebar Sliding */
+.cart-slide {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hide-cart {
+    transform: translateX(100%);
+}
+
+.show-cart {
+    transform: translateX(0);
+}
+
+/* Fade In Effect */
+.fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Auth Fade Specific */
+#auth-view .fade-in {
+    animation: popIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Tracking Modal Animation States */
+.tracking-active {
+    opacity: 1 !important;
+    background-color: rgba(15, 23, 42, 0.6);
+    /* Slate-900 transparent */
+    backdrop-filter: blur(4px);
+}
+
+.tracking-active #tracking-card {
+    transform: translateY(0) !important;
+}
+
+/* Pulse animation for premium buttons */
+@keyframes softPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 183, 3, 0.4);
+    }
+
+    /* Summit Gold pulse */
+    50% {
+        box-shadow: 0 0 0 4px rgba(255, 183, 3, 0);
+    }
+}
+
+.pulse-hover:hover {
+    animation: softPulse 1.5s infinite;
+}
+
+/* Zepto Style Add Button Animation */
+.add-btn-expand {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: right center;
+}
+
+.add-btn-expand:active {
+    transform: scale(0.95);
+}
+
+/* =========================================
+   3. SPECIFIC BACKGROUNDS
+   ========================================= */
+.auth-bg {
+    background-image: radial-gradient(circle at top right, rgba(139, 92, 246, 0.8), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(79, 70, 229, 0.8), transparent 40%),
+        url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: multiply;
+    background-color: #1e1b4b;
+    /* Indigo-950 */
+}
+
+/* =========================================
+   4. MEKAL MART SYSTEM CLASSES
+   ========================================= */
+.btn-primary {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    background-color: #FFB703;
+    color: #023047;
+    border-radius: 8px;
+    padding: 12px 24px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #E0A102;
+    /* 10% darker Summit Gold */
+}
+
+.btn-secondary {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    background-color: transparent;
+    color: #219EBC;
+    border: 2px solid #219EBC;
+    border-radius: 8px;
+    padding: 12px 24px;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(33, 158, 188, 0.1);
+    border-color: #1A7E97;
+    /* 10% darker Narmada Blue */
+    color: #1A7E97;
+}
+
+.pill-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: #D8F3DC;
+    color: #1B4332;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 12px;
+}
+
+/* =========================================
+   5. ENHANCED MODERN DESIGN ELEMENTS
+   ========================================= */
+
+/* Modern Card Shadows */
+.card-shadow {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 
+                0 10px 20px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-shadow:hover {
+    box-shadow: 0 20px 40px rgba(27, 67, 50, 0.12), 
+                0 10px 20px rgba(33, 158, 188, 0.08);
+}
+
+/* Enhanced Button Styles */
+.btn-gradient {
+    background: linear-gradient(135deg, #1B4332 0%, #0F4755 100%);
+    color: white;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(27, 67, 50, 0.3);
+}
+
+.btn-gradient:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 8px rgba(27, 67, 50, 0.2);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-gold:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(255, 183, 3, 0.3);
+}
+
+/* Product Card Enhancement */
+.product-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+}
+
+.product-card:hover {
+    transform: scale(1.02) translateY(-4px);
+    box-shadow: 0 20px 40px rgba(27, 67, 50, 0.15), 
+                0 0 1px rgba(33, 158, 188, 0.2);
+    border-color: rgba(33, 158, 188, 0.3);
+}
+
+/* Input Field Enhancement */
+.input-modern {
+    padding: 12px 16px;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.input-modern:focus {
+    border-color: #219EBC;
+    background: linear-gradient(135deg, #F0F9FB 0%, white 100%);
+    box-shadow: 0 0 0 4px rgba(33, 158, 188, 0.1);
+    outline: none;
+}
+
+/* Modal Enhancement */
+.modal-modern {
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(10px);
+}
+
+/* Navbar Enhancement */
+.navbar-modern {
+    background: linear-gradient(180deg, white 0%, #F8FAFC 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(219, 234, 254, 0.5);
+}
+
+/* Banner Gradient */
+.banner-gradient {
+    background: linear-gradient(135deg, #1B4332 0%, #0F4755 50%, #219EBC 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.banner-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 183, 3, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Cart Sidebar Mobile Enhancement */
+@media (max-width: 768px) {
+    .cart-sidebar-mobile {
+        width: 100% !important;
+        border-radius: 20px 20px 0 0;
+        max-height: 90vh;
+    }
+}
+
+/* Responsive Grid Enhancement */
+@media (max-width: 640px) {
+    .grid-responsive {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .grid-responsive {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+/* Touch Target Enhancement */
+@media (hover: none) and (pointer: coarse) {
+    button, a, input[type="checkbox"], input[type="radio"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Loading Animation Enhancement */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 8px;
+}
+
+/* Smooth Transitions */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+button, a, input {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =========================================
+   6. BLINKIT/ZOMATO INSPIRED DESIGN
+   ========================================= */
+
+/* Quick Add Button (Blinkit Style) */
+.quick-add-btn {
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(255, 183, 3, 0.25);
+}
+
+.quick-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 183, 3, 0.35);
+}
+
+.quick-add-btn:active {
+    transform: scale(0.95);
+}
+
+/* Category Pill (Blinkit Style) */
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid #E5E7EB;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #475569;
+}
+
+.category-pill:hover {
+    border-color: #FFB703;
+    background: rgba(255, 183, 3, 0.08);
+    color: #023047;
+}
+
+.category-pill.active {
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(255, 183, 3, 0.3);
+}
+
+/* Category Icon */
+.category-icon {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Product Card Badge (Zomato Style) */
+.product-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(255, 183, 3, 0.3);
+}
+
+.product-rating-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(27, 67, 50, 0.9);
+    backdrop-filter: blur(8px);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
+}
+
+.product-rating-badge i {
+    color: #FFB703;
+}
+
+/* Delivery Time Badge */
+.delivery-time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #E8F5E9;
+    color: #1B4332;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.delivery-time-badge i {
+    color: #1B4332;
+}
+
+/* Status Indicator (Zomato Style) */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.status-indicator.available {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.status-indicator.limited {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-indicator.unavailable {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+/* Bottom Navigation Bar (Mobile) */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #E5E7EB;
+    padding: 8px 0;
+    display: none;
+    z-index: 40;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.bottom-nav.show {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+}
+
+.bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+    color: #94A3B8;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item.active {
+    color: #FFB703;
+}
+
+.bottom-nav-item i {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+/* Filter Chip (Zomato Style) */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #475569;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.filter-chip:hover {
+    border-color: #FFB703;
+    background: rgba(255, 183, 3, 0.08);
+    color: #023047;
+}
+
+.filter-chip.active {
+    background: #FFB703;
+    border-color: #FFB703;
+    color: #023047;
+    font-weight: 600;
+}
+
+.filter-chip i {
+    font-size: 0.9rem;
+}
+
+/* Minimalist Search Bar (Blinkit/Zomato inspired) */
+.search-modern {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #F8FAFC;
+    border: 2px solid #E5E7EB;
+    transition: all 0.3s ease;
+}
+
+.search-modern:focus-within {
+    border-color: #FFB703;
+    background: white;
+    box-shadow: 0 4px 12px rgba(255, 183, 3, 0.15);
+}
+
+.search-modern input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    color: #023047;
+}
+
+.search-modern input::placeholder {
+    color: #94A3B8;
+}
+
+.search-modern i {
+    color: #94A3B8;
+    font-size: 1rem;
+}
+
+/* Quick Summary Card */
+.summary-card {
+    background: linear-gradient(135deg, #1B4332 0%, #0F4755 100%);
+    color: white;
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+}
+
+.summary-card-title {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-card-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-top: 4px;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 16px rgba(255, 183, 3, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 30;
+}
+
+.fab:hover {
+    transform: scale(1.1) translateY(-4px);
+    box-shadow: 0 8px 24px rgba(255, 183, 3, 0.5);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .fab {
+        bottom: 90px;
+    }
+}
+
+/* Rich Product Info Card (Zomato Style) */
+.product-info-card {
+    background: white;
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid #E5E7EB;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-info-card:hover {
+    border-color: #FFB703;
+    box-shadow: 0 8px 24px rgba(255, 183, 3, 0.15);
+}
+
+.product-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #023047;
+    margin-bottom: 4px;
+}
+
+.product-desc {
+    font-size: 0.8rem;
+    color: #64748B;
+    margin-bottom: 8px;
+}
+
+.product-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.product-price {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #023047;
+}
+
+.product-price-old {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    text-decoration: line-through;
+    margin-left: 4px;
+    opacity: 0.7;
+}
+
+/* Cart Counter Badge */
+.cart-badge-counter {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #FFB703 0%, #E0A102 100%);
+    color: #023047;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 8px rgba(255, 183, 3, 0.3);
+    animation: pop-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pop-in {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

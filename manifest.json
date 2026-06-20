@@ -1,0 +1,16 @@
+{
+  "name": "Mekal Mart",
+  "short_name": "Mekal Mart",
+  "description": "University Campus Hyperlocal Delivery Platform",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#004D66",
+  "theme_color": "#004D66",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

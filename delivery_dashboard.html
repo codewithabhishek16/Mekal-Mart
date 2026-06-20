@@ -1,0 +1,757 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Portal | Mekal Mart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1B4332',
+                        secondary: '#219EBC',
+                        action: '#FFB703',
+                        bglight: '#F9FBFF',
+                        ink: '#023047',
+                        igntu: {
+                            navy: '#1B4332',
+                            gold: '#FFB703',
+                            dark: '#112d22',
+                        },
+                        indigo: {
+                            50: '#F0F9FB',
+                            100: '#E0F3F7',
+                            200: '#BCE2EC',
+                            300: '#90CDE0',
+                            400: '#5FB5CE',
+                            500: '#219EBC',
+                            600: '#1A7E97',
+                            700: '#146073',
+                            800: '#0F4755',
+                            900: '#0B333D',
+                            950: '#072027',
+                        },
+                        violet: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        purple: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#023047',
+                            900: '#011F2E',
+                            950: '#00131C',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .toast-enter { transform: translateX(100%); opacity: 0; }
+        .toast-enter-active { transform: translateX(0); opacity: 1; transition: all 0.3s ease; }
+        .toast-exit { transform: translateX(0); opacity: 1; }
+        .toast-exit-active { transform: translateX(100%); opacity: 0; transition: all 0.3s ease; }
+    </style>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 bg-igntu-navy text-white p-4 shadow-2xl z-50 border-b border-white/10 backdrop-blur-md bg-opacity-95">
+        <div class="container mx-auto flex justify-between items-center px-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-action text-white p-2.5 rounded-lg shadow-lg shadow-action/20 rotate-3">
+                    <i class="fa-solid fa-motorcycle text-lg text-ink"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-montserrat font-bold tracking-tight leading-none text-white">Delivery Partner</h1>
+                    <p class="text-[10px] text-action uppercase font-bold tracking-widest mt-1">Mekal Mart Campus Agent</p>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center">
+                <button onclick="openProfile()" class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition group">
+                    <i class="fa-solid fa-user-circle text-xl group-hover:scale-110 transition"></i>
+                </button>
+                <button onclick="logout()" class="bg-[#FFB703] hover:bg-[#E0A102] text-[#023047] px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition flex items-center gap-2 shadow-lg shadow-[#FFB703]/20">
+                    <i class="fa-solid fa-power-off"></i> <span class="hidden md:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="container mx-auto max-w-6xl">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+                <div>
+                    <h2 class="text-4xl font-bold font-montserrat text-slate-800 tracking-tight">Active Missions</h2>
+                    <p class="text-slate-400 font-bold text-sm uppercase tracking-widest mt-2">Delivery Management Center</p>
+                </div>
+                <div class="flex bg-slate-100 p-1.5 rounded-xl shadow-inner w-full md:w-auto">
+                    <button onclick="switchTab('open')" id="tab-open" class="flex-1 md:flex-none px-8 py-3 text-xs font-montserrat font-bold rounded-lg shadow-sm bg-white text-primary transition duration-300">OPEN JOBS</button>
+                    <button onclick="switchTab('my')" id="tab-my" class="flex-1 md:flex-none px-8 py-3 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition duration-300">MY TASKS</button>
+                    <button onclick="switchTab('history')" id="tab-history" class="flex-1 md:flex-none px-8 py-3 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition duration-300">HISTORY</button>
+                </div>
+            </div>
+
+            <!-- Dashboard container -->
+            <div id="orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- PROFILE MODAL -->
+    <div id="delivery-profile-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden bg-igntu-navy/40 backdrop-blur-sm">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300 relative pointer-events-auto overflow-hidden" id="profile-card">
+            <div class="bg-igntu-navy text-white p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-igntu-gold opacity-20 blur-[60px] rounded-full -mr-10 -mt-10"></div>
+                <div class="flex justify-between items-center relative z-10">
+                    <h2 class="text-2xl font-black font-outfit">Delivery Profile</h2>
+                    <button onclick="closeProfile()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-solid fa-times text-lg"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <div class="relative w-32 h-32 mx-auto mb-4">
+                        <div class="w-full h-full bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center text-5xl overflow-hidden shadow-inner border-4 border-white ring-1 ring-slate-100">
+                            <img id="profile-img-preview" src="" class="w-full h-full object-cover hidden" alt="Profile">
+                            <i id="profile-img-icon" class="fa-solid fa-helmet-safety"></i>
+                        </div>
+                        <label for="profile-upload" class="absolute -bottom-2 -right-2 bg-secondary text-white w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300">
+                            <i class="fa-solid fa-camera text-sm"></i>
+                        </label>
+                        <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadProfileImage(event)">
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 font-outfit" id="prof-name">Agent Name</h3>
+                    <p class="text-xs font-black text-purple-600 uppercase tracking-[0.2em] mt-2">Delivery Partner</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-gradient-to-r from-igntu-navy to-igntu-dark p-6 rounded-3xl text-white shadow-xl shadow-igntu-navy/20 relative overflow-hidden group mb-4">
+                        <div class="relative z-10 flex justify-between items-end">
+                            <div>
+                                <p class="text-white/60 text-[10px] font-black uppercase tracking-widest mb-1">Total Earnings</p>
+                                <h2 class="text-4xl font-black font-outfit" id="prof-wallet-balance">₹0.00</h2>
+                                <p class="text-white/40 text-[9px] font-bold mt-2 italic">* Credits on every successful delivery</p>
+                            </div>
+                            <button onclick="requestWithdraw()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-xs font-montserrat font-bold backdrop-blur-sm transition border border-white/20">
+                                Withdraw
+                            </button>
+                        </div>
+                        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition duration-500"></div>
+                    </div>
+
+                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 group hover:border-purple-200 transition duration-300">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Phone / ID</p>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-phone text-purple-600"></i>
+                            <p class="text-sm font-black text-slate-800" id="prof-phone">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <script src="config.js"></script>
+    <script>
+        const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
+
+        async function authFetch(url, options = {}, retries = 3, delay = 1000) {
+            const token = localStorage.getItem('uniMartToken');
+            if (token) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                };
+            }
+            for (let i = 0; i < retries; i++) {
+                try {
+                    return await fetch(url, options);
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        window.onload = async () => {
+            if (!activeUser || (activeUser.role !== 'delivery' && activeUser.role !== 'partner')) {
+                localStorage.removeItem('uniMartActiveUser');
+                window.location.href = 'index.html';
+            }
+        };
+
+        let currentTab = 'open'; // 'open' or 'my'
+
+        function openProfile() {
+            if(!activeUser) return;
+            document.getElementById('prof-name').innerText = activeUser.name || 'Agent';
+            document.getElementById('prof-phone').innerText = activeUser.phone || 'N/A';
+            loadWalletBalance();
+            
+            if (activeUser.image) {
+                document.getElementById('profile-img-preview').src = activeUser.image + '?t=' + new Date().getTime();
+                document.getElementById('profile-img-preview').classList.remove('hidden');
+                document.getElementById('profile-img-icon').classList.add('hidden');
+            }
+            
+            const modal = document.getElementById('delivery-profile-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { document.getElementById('profile-card').classList.remove('scale-95'); document.getElementById('profile-card').classList.add('scale-100'); }, 10);
+        }
+
+        async function loadWalletBalance() {
+            try {
+                const res = await authFetch(`${API_URL}/wallet/balance?phone=${activeUser.phone || activeUser.email}`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    document.getElementById('prof-wallet-balance').innerText = `₹${parseFloat(data.balance).toFixed(2)}`;
+                }
+            } catch(e) {}
+        }
+
+        async function uploadProfileImage(event) {
+            if(!activeUser) return;
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const btnIcon = document.querySelector('label[for="profile-upload"] i');
+            const ogClass = btnIcon.className;
+            btnIcon.className = "fa-solid fa-spinner fa-spin text-xs";
+
+            const formData = new FormData();
+            formData.append('role', activeUser.role);
+            formData.append('user_id', activeUser.id);
+            formData.append('image', file);
+
+            try {
+                const res = await authFetch(`${API_URL}/profile/upload`, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                const data = await res.json();
+                
+                btnIcon.className = ogClass;
+                
+                if (data.status === 'success') {
+                    document.getElementById('profile-img-preview').src = data.image_url + '?t=' + new Date().getTime();
+                    document.getElementById('profile-img-preview').classList.remove('hidden');
+                    document.getElementById('profile-img-icon').classList.add('hidden');
+                    activeUser.image = data.image_url;
+                    localStorage.setItem('uniMartActiveUser', JSON.stringify(activeUser));
+                    showToast("Profile image updated!", "success");
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch(e) {
+                btnIcon.className = ogClass;
+                showToast("Upload failed", "error");
+            }
+        }
+
+        function closeProfile() {
+            document.getElementById('profile-card').classList.remove('scale-100');
+            document.getElementById('profile-card').classList.add('scale-95');
+            setTimeout(() => { document.getElementById('delivery-profile-modal').classList.add('hidden'); }, 300);
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            ['open', 'my', 'history'].forEach(t => {
+                const el = document.getElementById('tab-' + t);
+                if (t === tab) {
+                    el.className = "flex-1 md:flex-none px-8 py-3 text-xs font-montserrat font-bold rounded-lg shadow-sm bg-white text-primary transition duration-300";
+                } else {
+                    el.className = "flex-1 md:flex-none px-8 py-3 text-xs font-montserrat font-bold rounded-lg text-slate-400 hover:text-slate-600 transition duration-300";
+                }
+            });
+            loadOrders();
+        }
+
+        async function logout() {
+            localStorage.removeItem('uniMartActiveUser');
+            window.location.href = 'index.html';
+        }
+
+        async function loadOrders() {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '<p class="text-center w-full col-span-3 text-teal-600 py-10 font-bold"><i class="fa-solid fa-spinner fa-spin text-3xl"></i><br>Finding jobs...</p>';
+            
+            let url = `${API_URL}/delivery/open-orders`;
+            if (currentTab === 'my') {
+                url = `${API_URL}/delivery/my-orders?agent_id=${activeUser.id}`;
+            } else if (currentTab === 'history') {
+                url = `${API_URL}/delivery/history?agent_id=${activeUser.id}`;
+            }
+
+            try {
+                const sep = url.includes('?') ? '&' : '?';
+                const res = await authFetch(url + sep + 't=' + new Date().getTime());
+                const orders = await res.json();
+                
+                container.innerHTML = '';
+                
+                if(!Array.isArray(orders) || orders.length === 0) {
+                    const msg = currentTab === 'open' ? 'No open jobs right now.' : 'You have no active deliveries.';
+                    container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-20 opacity-50"><i class="fa-solid fa-route text-6xl mb-4 text-teal-700"></i><p class="text-xl font-bold text-gray-500">${msg}</p></div>`;
+                    return;
+                }
+
+                orders.forEach(order => {
+                    const statusBadge = getStatusBadge(order.status);
+                    
+                    let actionHtml = '';
+                    if (currentTab === 'open') {
+                        // For open jobs, they just accept it. Phone number is hidden directly to prevent privacy leaks unless accepted.
+                        actionHtml = `<button onclick="acceptOrder('${order.order_id}')" class="w-full bg-[#FFB703] text-[#023047] py-3 px-6 rounded-lg font-montserrat font-bold shadow-sm hover:bg-[#E0A102] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2"><i class="fa-solid fa-motorcycle"></i> Accept Delivery Job</button>`;
+                    } else if (currentTab === 'my') {
+                        if (order.status === 'Picked Up' || order.status === 'Out for Delivery') {
+                            actionHtml = `
+                            <div class="space-y-3 bg-indigo-50/50 p-4 rounded-3xl border border-indigo-100">
+                                <div class="relative">
+                                    <input type="text" id="delivery-pin-${order.order_id}" maxlength="4" placeholder="Enter Customer Delivery PIN" class="w-full px-4 py-3 bg-white border-2 border-slate-100 focus:border-secondary rounded-2xl outline-none transition-all text-center tracking-widest font-black text-lg text-slate-800" />
+                                </div>
+                                <button onclick="markDelivered('${order.order_id}')" class="w-full bg-[#FFB703] text-[#023047] py-3 px-6 rounded-lg font-montserrat font-bold shadow-sm hover:bg-[#E0A102] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-check-double"></i> Verify & Complete Drop-off
+                                </button>
+                            </div>`;
+                        } else {
+                            actionHtml = `
+                            <div class="space-y-3 bg-yellow-50/50 p-4 rounded-3xl border border-yellow-100">
+                                <div class="relative">
+                                    <input type="text" id="pickup-pin-${order.order_id}" maxlength="4" placeholder="Enter Vendor Pickup PIN" class="w-full px-4 py-3 bg-white border-2 border-slate-100 focus:border-secondary rounded-2xl outline-none transition-all text-center tracking-widest font-black text-lg text-slate-800" />
+                                </div>
+                                <button onclick="markPickedUp('${order.order_id}')" class="w-full bg-[#FFB703] text-[#023047] py-3 px-6 rounded-lg font-montserrat font-bold shadow-sm hover:bg-[#E0A102] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-box-open"></i> Verify & Pick Up
+                                </button>
+                            </div>`;
+                        }
+                    } else {
+                        actionHtml = `<div class="bg-gray-100 text-gray-500 text-center font-bold py-3 rounded-lg text-sm border border-gray-200">Completed</div>`;
+                    }
+
+                    const displayName = order.student_name || order.customer_name || 'Customer';
+                    const displayHostel = order.hostel_name || order.hostel || 'Hostel';
+                    const displayRoom = order.room_number || order.room_no || '--';
+                    
+                    let phoneRowHtml = '';
+                    if (order.phone) {
+                        phoneRowHtml = `
+                        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center justify-between group/loc hover:bg-emerald-100 transition duration-300">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-white text-emerald-600 flex items-center justify-center shadow-sm"><i class="fa-solid fa-phone"></i></div>
+                                <div>
+                                    <p class="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Contact Number</p>
+                                    <p class="text-sm font-black text-emerald-900">${order.phone}</p>
+                                </div>
+                            </div>
+                            <a href="tel:${order.phone}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-phone"></i> Call Customer
+                            </a>
+                        </div>`;
+                    } else {
+                        phoneRowHtml = `
+                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-white text-slate-400 flex items-center justify-center shadow-sm"><i class="fa-solid fa-user-shield"></i></div>
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Number</p>
+                                <p class="text-sm font-bold text-slate-500">Hidden for Privacy</p>
+                            </div>
+                        </div>`;
+                    }
+
+                    container.innerHTML += `
+                        <div class="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-igntu-navy/10 transition-all duration-500 overflow-hidden flex flex-col hover:-translate-y-2">
+                            <div class="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                                <div>
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Order ID</span>
+                                    <span class="font-black text-slate-800 text-lg font-outfit">#${order.order_id}</span>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="p-8 flex-1">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="w-14 h-14 rounded-2xl bg-igntu-navy text-white flex items-center justify-center text-xl shadow-lg shadow-igntu-navy/20 font-black">
+                                        ${displayName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-black text-slate-800 text-xl font-outfit leading-tight">${displayName}</h3>
+                                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">${order.created_at}</p>
+                                    </div>
+                                </div>
+ 
+                                <div class="space-y-4">
+                                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-center gap-4 group/loc hover:bg-slate-100 transition duration-300">
+                                        <div class="w-10 h-10 rounded-xl bg-white text-igntu-navy flex items-center justify-center shadow-sm"><i class="fa-solid fa-location-dot"></i></div>
+                                        <div>
+                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Delivery Location</p>
+                                            <p class="text-sm font-black text-igntu-navy">${displayHostel}, Room ${displayRoom}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    ${phoneRowHtml}
+                                </div>
+                                
+                                <div class="mt-6 pt-6 border-t border-slate-50">
+                                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Package Details</span>
+                                    <p class="text-sm font-bold text-slate-600 leading-relaxed">${order.items.length > 80 ? order.items.substring(0, 80) + '...' : order.items}</p>
+                                </div>
+                            </div>
+ 
+                            <div class="p-6 bg-slate-50/50 border-t border-slate-50 mt-auto">
+                                <div class="flex justify-between items-center mb-6 px-2">
+                                    <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Estimated Earning</span>
+                                    <span class="text-3xl font-black text-green-600 font-outfit">₹${order.delivery_fee || 20}</span>
+                                </div>
+                                ${actionHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                console.error("Dashboard Error:", e);
+            }
+        }
+
+        async function acceptOrder(id) {
+            try {
+                const res = await authFetch(`${API_URL}/delivery/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ order_id: id, agent_id: activeUser.id })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    showToast("Job Accepted! Go to My Deliveries.", "success");
+                    loadOrders(); // refresh
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        async function markDelivered(id) {
+             const pinInput = document.getElementById(`delivery-pin-${id}`);
+             const pin = pinInput ? pinInput.value.trim() : '';
+             if (!pin || pin.length !== 4) return showToast("A valid 4-digit PIN is required to complete delivery", "error");
+
+             try {
+                const res = await authFetch(`${API_URL}/orders/verify-dropoff`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ order_id: id, agent_id: activeUser.id, pin: pin })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    showToast(data.message || "Delivery Successful! Earnings added to wallet.", "success");
+                    loadOrders(); // refresh
+                    loadWalletBalance();
+                } else {
+                    showToast(data.message || "Invalid PIN", "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        async function markPickedUp(id) {
+             const pinInput = document.getElementById(`pickup-pin-${id}`);
+             const pin = pinInput ? pinInput.value.trim() : '';
+             if (!pin || pin.length !== 4) return showToast("A valid 4-digit PIN is required to pick up the order", "error");
+
+             try {
+                const res = await authFetch(`${API_URL}/delivery/pickup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ order_id: id, agent_id: activeUser.id, pin: pin })
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    showToast("Order Picked Up successfully!", "success");
+                    loadOrders(); // refresh
+                } else {
+                    showToast(data.message || "Invalid PIN", "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        async function requestWithdraw() {
+            const amount = prompt("Enter amount to withdraw (₹):");
+            if (!amount || isNaN(amount) || amount <= 0) return showToast("Invalid amount", "error");
+
+            try {
+                const res = await authFetch(`${API_URL}/delivery/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: activeUser.id, amount: parseFloat(amount) })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast(data.message, "success");
+                    loadWalletBalance();
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'Picked Up' || status === 'Handed to Delivery Agent') {
+                return `<span class="px-3 py-1 rounded-xl text-[10px] font-black bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-widest"><i class="fa-solid fa-motorcycle mr-1"></i> ON THE WAY</span>`;
+            } else if (status === 'Pending' || status === 'Accepted' || status === 'Packing') {
+                return `<span class="px-3 py-1 rounded-xl text-[10px] font-black bg-orange-100 text-orange-700 border border-orange-200 uppercase tracking-widest"><i class="fa-solid fa-box mr-1"></i> PREPARING</span>`;
+            }
+            return `<span class="px-3 py-1 rounded-xl text-[10px] font-black bg-slate-100 text-slate-600 uppercase tracking-widest">${status}</span>`;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const isSuccess = type === 'success';
+            const icon = isSuccess ? '<i class="fa-solid fa-circle-check text-green-500 text-xl"></i>' : '<i class="fa-solid fa-circle-xmark text-red-500 text-xl"></i>';
+            const borderClass = isSuccess ? 'border-green-500' : 'border-red-500';
+            
+            toast.className = `pointer-events-auto bg-white shadow-2xl rounded-[1.5rem] p-5 flex items-center gap-4 min-w-[300px] border-l-4 transform transition-all duration-500 toast-enter ${borderClass}`;
+            toast.innerHTML = `
+                <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isSuccess ? 'bg-green-50' : 'bg-red-50'}">
+                    ${icon}
+                </div>
+                <div>
+                    <h4 class="font-black text-slate-800 text-sm font-outfit uppercase tracking-wider">${type}</h4>
+                    <p class="text-xs font-bold text-slate-400 mt-0.5">${message}</p>
+                </div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); });
+            setTimeout(() => {
+                toast.classList.remove('toast-enter-active');
+                toast.classList.add('toast-exit-active');
+                setTimeout(() => { toast.remove(); }, 500);
+            }, 3500);
+        }
+
+        // ============================================================
+        // REAL-TIME ORDER NOTIFICATIONS
+        // ============================================================
+        let lastNotifCount = 0;
+
+        // Request browser notification permission on load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        function playNotifSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                // Two-tone alert for delivery (more urgent)
+                osc.frequency.value = 660;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.3);
+                // Second beep
+                setTimeout(() => {
+                    const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc2 = ctx2.createOscillator();
+                    const gain2 = ctx2.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(ctx2.destination);
+                    osc2.frequency.value = 880;
+                    osc2.type = 'sine';
+                    gain2.gain.setValueAtTime(0.4, ctx2.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.4);
+                    osc2.start(ctx2.currentTime);
+                    osc2.stop(ctx2.currentTime + 0.4);
+                }, 350);
+            } catch(e) { console.log('Audio not supported'); }
+        }
+
+        function showBrowserNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notif = new Notification(title, {
+                    body: body,
+                    icon: 'logo.png',
+                    badge: 'logo.png',
+                    tag: 'mekalmart-delivery-' + Date.now(),
+                    requireInteraction: true
+                });
+                notif.onclick = function() {
+                    window.focus();
+                    notif.close();
+                };
+            }
+        }
+
+        async function pollNotifications() {
+            if (!activeUser || document.hidden) return; // Stop spam if tab is hidden
+            try {
+                const res = await authFetch(`${API_URL}/notifications?role=delivery&user_id=${encodeURIComponent(activeUser.id)}&t=${Date.now()}`);
+                const notifs = await res.json();
+
+                if (Array.isArray(notifs) && notifs.length > 0 && notifs.length > lastNotifCount) {
+                    const newest = notifs[0];
+                    playNotifSound();
+                    showBrowserNotification(newest.title, newest.message);
+                    showToast(newest.title, 'success');
+
+                    // Auto-refresh orders list
+                    loadOrders();
+
+                    // Mark as read
+                    await authFetch(`${API_URL}/notifications/mark-read`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ role: 'delivery', user_id: String(activeUser.id) })
+                    });
+                }
+                lastNotifCount = notifs.length;
+            } catch(e) {
+                console.error('Notification poll error:', e);
+            }
+        }
+
+        let orderInterval, notificationInterval;
+
+        async function checkApproval() {
+            try {
+                const res = await authFetch(`${API_URL}/auth/me`);
+                if (res.ok) {
+                    const latestUser = await res.json();
+                    localStorage.setItem('uniMartActiveUser', JSON.stringify(latestUser));
+                    
+                    if ((latestUser.role === 'delivery' || latestUser.role === 'partner') && latestUser.status === 'Pending Approval') {
+                        // Show overlay
+                        document.getElementById('rider-gatekeeper-overlay').classList.remove('hidden');
+                        // Hide main content
+                        const mainContent = document.querySelector('div.flex-1');
+                        if (mainContent) mainContent.classList.add('hidden');
+                        // Freeze loops
+                        if (orderInterval) clearInterval(orderInterval);
+                        if (notificationInterval) clearInterval(notificationInterval);
+                    } else {
+                        document.getElementById('rider-gatekeeper-overlay').classList.add('hidden');
+                        const mainContent = document.querySelector('div.flex-1');
+                        if (mainContent) mainContent.classList.remove('hidden');
+                        
+                        // Start tracking loops
+                        if (!orderInterval) {
+                            loadOrders();
+                            orderInterval = setInterval(() => { if(!document.hidden) loadOrders(); }, 10000);
+                        }
+                        if (!notificationInterval) {
+                            pollNotifications();
+                            notificationInterval = setInterval(pollNotifications, 8000);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Rider approval check failed:", e);
+                // Fallback: run normally if fetch fails
+                if (!orderInterval) {
+                    loadOrders();
+                    orderInterval = setInterval(() => { if(!document.hidden) loadOrders(); }, 10000);
+                }
+                if (!notificationInterval) {
+                    pollNotifications();
+                    notificationInterval = setInterval(pollNotifications, 8000);
+                }
+            }
+        }
+
+        async function logout() {
+            localStorage.removeItem('uniMartActiveUser');
+            localStorage.removeItem('uniMartToken');
+            window.location.href = 'index.html';
+        }
+
+        // Init
+        checkApproval();
+    </script>
+    
+    <!-- RIDER GATEKEEPER OVERLAY -->
+    <div id="rider-gatekeeper-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900/90 text-white p-6 text-center backdrop-blur-md hidden">
+        <div class="max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-6">
+            <div class="w-20 h-20 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-4xl text-amber-400 animate-pulse">
+                <i class="fa-solid fa-helmet-safety"></i>
+            </div>
+            <h2 class="text-3xl font-black font-outfit text-white tracking-tight">Pending Verification</h2>
+            <p class="text-slate-200 font-bold text-sm uppercase tracking-widest leading-relaxed">
+                Rider Registration Pending Approval
+            </p>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Master Admins are reviewing your rider profile. You will be able to accept delivery tasks once approved.
+            </p>
+            <button onclick="logout()" class="mt-4 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl text-xs font-montserrat font-bold transition flex items-center gap-2 shadow-lg shadow-red-500/20">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+        </div>
+    </div>
+</body>
+</html>

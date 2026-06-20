@@ -1,0 +1,767 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard | Mekal Mart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1B4332',
+                        secondary: '#219EBC',
+                        action: '#FFB703',
+                        bglight: '#F9FBFF',
+                        ink: '#023047',
+                        igntu: {
+                            navy: '#1B4332',
+                            gold: '#FFB703',
+                            dark: '#112d22',
+                        },
+                        indigo: {
+                            50: '#F0F9FB',
+                            100: '#E0F3F7',
+                            200: '#BCE2EC',
+                            300: '#90CDE0',
+                            400: '#5FB5CE',
+                            500: '#219EBC',
+                            600: '#1A7E97',
+                            700: '#146073',
+                            800: '#0F4755',
+                            900: '#0B333D',
+                            950: '#072027',
+                        },
+                        violet: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        purple: {
+                            50: '#F4F7F5',
+                            100: '#E8EFEA',
+                            200: '#D5E2D9',
+                            300: '#B6CCBE',
+                            400: '#8EAF9C',
+                            500: '#1B4332',
+                            600: '#173A2B',
+                            700: '#122E22',
+                            800: '#0E231B',
+                            900: '#0B1B15',
+                        },
+                        slate: {
+                            50: '#F8FAFC',
+                            100: '#F1F5F9',
+                            200: '#E2E8F0',
+                            300: '#CBD5E1',
+                            400: '#94A3B8',
+                            500: '#64748B',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#023047',
+                            900: '#011F2E',
+                            950: '#00131C',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col">
+    
+    <!-- Navbar -->
+    <nav class="sticky top-0 bg-igntu-navy text-white p-4 shadow-2xl z-50 border-b border-white/10 backdrop-blur-md bg-opacity-95">
+        <div class="container mx-auto flex justify-between items-center px-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-[#FFB703] text-[#023047] p-2.5 rounded-lg shadow-lg shadow-[#FFB703]/20 rotate-3">
+                    <i class="fa-solid fa-store text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-montserrat font-bold tracking-tight leading-none text-white">Vendor Portal</h1>
+                    <p class="text-[10px] text-[#FFB703] uppercase font-bold tracking-widest mt-1">Official Mekal Mart Marketplace</p>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center">
+                <button onclick="openProfile()" class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition group">
+                    <i class="fa-solid fa-user-circle text-xl group-hover:scale-110 transition"></i>
+                </button>
+                <div class="h-8 w-px bg-white/10 mx-1 hidden md:block"></div>
+                <a href="admin_dashboard.html" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-receipt"></i> <span class="hidden md:inline">Orders</span>
+                </a>
+                <button onclick="logout()" class="bg-[#FFB703] hover:bg-[#E0A102] text-[#023047] px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition flex items-center gap-2 shadow-lg shadow-[#FFB703]/20">
+                    <i class="fa-solid fa-power-off"></i> <span class="hidden md:inline">Logout</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+        <div class="container mx-auto max-w-5xl">
+
+            <!-- Shop Hero Section -->
+            <div class="relative overflow-hidden bg-igntu-navy rounded-[2rem] p-8 mb-8 text-white shadow-2xl">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-igntu-gold opacity-10 blur-[100px] rounded-full -mr-20 -mt-20"></div>
+                <div class="absolute bottom-0 left-0 w-48 h-48 bg-teal-500 opacity-10 blur-[80px] rounded-full -ml-10 -mb-10"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <span class="inline-block px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3">Shop Dashboard</span>
+                        <h2 class="text-4xl md:text-5xl font-bold font-montserrat tracking-tight" id="vendor-shop-name">Your Shop</h2>
+                        <div class="flex items-center gap-3 mt-4" id="vendor-shop-category">
+                            <!-- Populated by JS -->
+                        </div>
+                        <input type="hidden" id="shop-selector">
+                    </div>
+                    <button id="btn-add-product" onclick="toggleAddProduct()" class="group bg-[#FFB703] text-[#023047] px-6 py-3 rounded-lg font-montserrat font-bold hover:bg-[#E0A102] transition-all transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 shadow-md">
+                        <i class="fa-solid fa-plus text-lg group-hover:rotate-90 transition duration-300"></i> 
+                        <span>Add New Item</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-igntu-navy/5 text-igntu-navy flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-box"></i>
+                    </div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Total Items</p>
+                    <h4 class="text-2xl font-black text-slate-800" id="stat-total-items">0</h4>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">In Stock</p>
+                    <h4 class="text-2xl font-black text-slate-800" id="stat-in-stock">0</h4>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Pending Orders</p>
+                    <h4 class="text-2xl font-black text-slate-800" id="stat-pending-orders">0</h4>
+                </div>
+                <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-igntu-gold/10 text-igntu-gold flex items-center justify-center mb-3">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <p class="text-[10px] font-black uppercase tracking-wider text-slate-400">Monthly Revenue</p>
+                    <h4 class="text-2xl font-black text-slate-800" id="stat-monthly-revenue">₹0</h4>
+                </div>
+            </div>
+
+            <!-- Search & Filter Area -->
+            <div class="mb-6 flex flex-col md:flex-row gap-4 items-center">
+                <div class="relative flex-1 w-full">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-search text-slate-400"></i>
+                    </div>
+                    <input type="text" id="vendor-search" oninput="filterVendorProducts(this.value)" placeholder="Search in your inventory..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-igntu-navy/10 transition shadow-sm">
+                </div>
+            </div>
+
+            <!-- ADD PRODUCT FORM (Modal style) -->
+            <div id="add-product-section" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-igntu-navy/40 backdrop-blur-sm">
+                <div class="bg-white rounded-[2.5rem] p-8 md:p-10 w-full max-w-2xl shadow-2xl border border-white/20 transform transition-all duration-300">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h3 class="text-3xl font-black text-igntu-navy font-outfit leading-tight">Add New Item</h3>
+                            <p class="text-slate-400 text-sm font-bold mt-1 uppercase tracking-widest">Inventory Management</p>
+                        </div>
+                        <button onclick="toggleAddProduct()" class="w-12 h-12 rounded-full bg-slate-50 text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition flex items-center justify-center">
+                            <i class="fa-solid fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <form id="upload-form" onsubmit="handleUpload(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-2">Product Name</label>
+                            <input type="text" id="upload-name" required placeholder="e.g. Classic Cheese Burger" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold focus:outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-white transition">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-2">Listing Price (₹)</label>
+                            <div class="relative">
+                                <span class="absolute left-6 top-1/2 -translate-y-1/2 text-xl font-black text-slate-800">₹</span>
+                                <input type="number" id="upload-price" required step="0.01" placeholder="99.00" class="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-black focus:outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-white transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-2">Category</label>
+                            <select id="upload-category" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-base font-bold focus:outline-none focus:ring-4 focus:ring-purple-500/10 focus:bg-white transition appearance-none cursor-pointer">
+                                <option value="food">Fresh Food</option>
+                                <option value="grocery">Daily Groceries</option>
+                                <option value="stationary">Stationary</option>
+                                <option value="medicine">Health & Wellness</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-2">Product Photo</label>
+                            <div class="relative group">
+                                <input type="file" id="upload-img" accept="image/png, image/jpeg, image/webp" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                <div class="w-full px-6 py-8 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 flex flex-col items-center justify-center group-hover:bg-purple-50 group-hover:border-purple-200 transition duration-300">
+                                    <i class="fa-solid fa-cloud-upload text-3xl text-slate-300 group-hover:text-purple-400 mb-2"></i>
+                                    <p class="text-sm font-bold text-slate-500 group-hover:text-purple-600">Click to upload product image</p>
+                                    <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">JPG, PNG or WEBP (Max 2MB)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2 pt-4">
+                            <button type="submit" id="btn-submit-upload" class="w-full bg-[#FFB703] hover:bg-[#E0A102] text-[#023047] py-3 rounded-lg font-montserrat font-bold text-lg transition-all duration-300 shadow-lg flex items-center justify-center gap-3 transform hover:-translate-y-0.5 active:scale-95">
+                                <i class="fa-solid fa-paper-plane"></i> Publish Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="products-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Initial State -->
+                <div class="col-span-full text-center py-20 text-gray-400" id="empty-state">
+                    <i class="fa-solid fa-hand-pointer text-4xl mb-4"></i>
+                    <p class="text-xl font-bold">Select your shop above to load products.</p>
+                </div>
+            </div>
+
+        </div>
+    </di    <!-- VENDOR PROFILE MODAL -->
+    <div id="vendor-profile-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden bg-igntu-navy/40 backdrop-blur-sm">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300 relative pointer-events-auto overflow-hidden" id="profile-card">
+            <div class="bg-igntu-navy text-white p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-igntu-gold opacity-20 blur-[60px] rounded-full -mr-10 -mt-10"></div>
+                <div class="flex justify-between items-center relative z-10">
+                    <h2 class="text-2xl font-black font-outfit">Shop Profile</h2>
+                    <button onclick="closeProfile()" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><i class="fa-solid fa-times text-lg"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <div class="relative w-32 h-32 mx-auto mb-4">
+                        <div class="w-full h-full bg-slate-50 text-slate-300 rounded-[2rem] flex items-center justify-center text-5xl overflow-hidden shadow-inner border-4 border-white ring-1 ring-slate-100">
+                            <img id="profile-img-preview" src="" class="w-full h-full object-cover hidden" alt="Profile">
+                            <i id="profile-img-icon" class="fa-solid fa-store"></i>
+                        </div>
+                        <label for="profile-upload" class="absolute -bottom-2 -right-2 bg-secondary text-white w-10 h-10 rounded-2xl flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-all duration-300">
+                            <i class="fa-solid fa-camera text-sm"></i>
+                        </label>
+                        <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadProfileImage(event)">
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 font-outfit" id="prof-name">Vendor Name</h3>
+                    <p class="text-xs font-black text-purple-600 uppercase tracking-[0.2em] mt-2" id="prof-role">Official Vendor</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 group hover:border-purple-200 transition duration-300">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Phone / ID</p>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-phone text-purple-600"></i>
+                            <p class="text-sm font-black text-slate-800" id="prof-phone">--</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 group hover:border-purple-200 transition duration-300">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Shop Identity</p>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-shop text-purple-600"></i>
+                            <p class="text-sm font-black text-slate-800" id="prof-shop-name">--</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-100 group hover:border-purple-200 transition duration-300">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Market Category</p>
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-tags text-purple-600"></i>
+                            <p class="text-sm font-black text-slate-800 capitalize" id="prof-shop-cat">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 right-5 z-50 bg-white shadow-xl rounded-lg p-4 border-l-4 border-green-500 flex items-center gap-4 transition-all duration-300 transform translate-x-full opacity-0 pointer-events-none">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-green-500 text-xl"></i>
+        <div>
+            <h4 id="toast-title" class="font-bold text-gray-800 text-sm">Success</h4>
+            <p id="toast-message" class="text-xs text-gray-500">Action completed!</p>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
+
+        async function authFetch(url, options = {}, retries = 3, delay = 1000) {
+            const token = localStorage.getItem('uniMartToken');
+            if (token) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                };
+            }
+            for (let i = 0; i < retries; i++) {
+                try {
+                    return await fetch(url, options);
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+
+        window.onload = async () => {
+            if (!activeUser || activeUser.role !== 'vendor') {
+                localStorage.removeItem('uniMartActiveUser');
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('vendor-shop-name').innerText = activeUser.shop_name || "Your Shop";
+                document.getElementById('vendor-shop-category').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="bg-white/10 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/20">${activeUser.shop_category || "General"}</span>
+                        <span class="w-1 h-1 bg-white/30 rounded-full"></span>
+                        <span class="text-purple-200 text-xs font-bold">Product Management</span>
+                    </div>`;
+                document.getElementById('shop-selector').value = activeUser.email; // Shop ID is the vendor's email address
+                loadVendorProducts();
+                loadVendorStats();
+            }
+        };
+
+        let allProducts = [];
+
+        function openProfile() {
+            if(!activeUser) return;
+            document.getElementById('prof-name').innerText = activeUser.name || 'Vendor';
+            document.getElementById('prof-phone').innerText = activeUser.phone || activeUser.id || 'N/A';
+            document.getElementById('prof-shop-name').innerText = activeUser.shop_name || 'N/A';
+            document.getElementById('prof-shop-cat').innerText = activeUser.shop_category || 'N/A';
+            
+            if (activeUser.image) {
+                document.getElementById('profile-img-preview').src = activeUser.image + '?t=' + new Date().getTime();
+                document.getElementById('profile-img-preview').classList.remove('hidden');
+                document.getElementById('profile-img-icon').classList.add('hidden');
+            }
+            
+            const modal = document.getElementById('vendor-profile-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { document.getElementById('profile-card').classList.remove('scale-95'); document.getElementById('profile-card').classList.add('scale-100'); }, 10);
+        }
+
+        async function uploadProfileImage(event) {
+            if(!activeUser) return;
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const btnIcon = document.querySelector('label[for="profile-upload"] i');
+            const ogClass = btnIcon.className;
+            btnIcon.className = "fa-solid fa-spinner fa-spin text-xs";
+
+            const formData = new FormData();
+            formData.append('role', activeUser.role);
+            formData.append('user_id', activeUser.id);
+            formData.append('image', file);
+
+            try {
+                const res = await authFetch(`${API_URL}/profile/upload`, { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                const data = await res.json();
+                
+                btnIcon.className = ogClass;
+                
+                if (data.status === 'success') {
+                    document.getElementById('profile-img-preview').src = data.image_url + '?t=' + new Date().getTime();
+                    document.getElementById('profile-img-preview').classList.remove('hidden');
+                    document.getElementById('profile-img-icon').classList.add('hidden');
+                    activeUser.image = data.image_url;
+                    localStorage.setItem('uniMartActiveUser', JSON.stringify(activeUser));
+                    showToast("Profile image updated!", "success");
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch(e) {
+                btnIcon.className = ogClass;
+                showToast("Upload failed", "error");
+            }
+        }
+
+        function closeProfile() {
+            document.getElementById('profile-card').classList.remove('scale-100');
+            document.getElementById('profile-card').classList.add('scale-95');
+            setTimeout(() => { document.getElementById('vendor-profile-modal').classList.add('hidden'); }, 300);
+        }
+
+        async function logout() {
+            localStorage.removeItem('uniMartActiveUser');
+            localStorage.removeItem('uniMartToken');
+            window.location.href = 'index.html';
+        }
+        
+        function toggleAddProduct() {
+            const section = document.getElementById('add-product-section');
+            if(section.classList.contains('hidden')) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        // Handle Image Upload Submissions
+        async function handleUpload(e) {
+            e.preventDefault();
+            const shopId = document.getElementById('shop-selector').value;
+            if(!shopId) return showToast("Select a shop first!", "error");
+            
+            const btn = document.getElementById('btn-submit-upload');
+            const ogText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('shop_id', shopId);
+            formData.append('name', document.getElementById('upload-name').value);
+            formData.append('price', document.getElementById('upload-price').value);
+            formData.append('category', document.getElementById('upload-category').value);
+            formData.append('product_img', document.getElementById('upload-img').files[0]);
+
+            try {
+                const res = await authFetch(`${API_URL}/vendor/add-product`, {
+                    method: 'POST',
+                    body: formData 
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    showToast("Product Published successfully!");
+                    document.getElementById('upload-form').reset();
+                    toggleAddProduct();
+                    loadVendorProducts(); // Refresh list immediately
+                } else {
+                    showToast(data.message, "error");
+                }
+            } catch(err) {
+                showToast("Connection Error during upload.", "error");
+            } finally {
+                btn.innerHTML = ogText;
+                btn.disabled = false;
+            }
+        }
+
+        async function loadVendorProducts() {
+            const shopId = document.getElementById('shop-selector').value;
+            const container = document.getElementById('products-container');
+
+            if (!shopId) {
+                container.innerHTML = `<div class="col-span-full text-center py-20 text-gray-400" id="empty-state"><p class="text-xl font-bold">Session expired. Please log in again.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = '<p class="text-center w-full col-span-3 text-indigo-400 py-10"><i class="fa-solid fa-spinner fa-spin text-3xl"></i><br>Loading products...</p>';
+
+            try {
+                const res = await authFetch(`${API_URL}/products?shop_id=${encodeURIComponent(shopId)}&t=${new Date().getTime()}`);
+                allProducts = await res.json();
+                
+                renderProductsGrid(allProducts);
+            } catch(e) {
+                console.error("Fetch Error:", e);
+                container.innerHTML = '<p class="text-center text-red-500 col-span-full font-bold">Connection Error. Please check your backend.</p>';
+            }
+        }
+
+        function filterVendorProducts(query) {
+            query = query.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query));
+            renderProductsGrid(filtered);
+        }
+
+        function renderProductsGrid(products) {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            
+            // Update Stats
+            document.getElementById('stat-total-items').innerText = allProducts.length;
+            document.getElementById('stat-in-stock').innerText = allProducts.filter(p => p.in_stock == 1).length;
+
+            if(!Array.isArray(products) || products.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-24 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+                        <div class="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-800">No products found</h3>
+                        <p class="text-slate-400 mt-2 font-medium">Try a different search or add a new item.</p>
+                    </div>`;
+                return;
+            }
+
+            products.forEach(p => {
+                const isInStock = p.in_stock == 1;
+                
+                container.innerHTML += `
+                    <div class="group bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 overflow-hidden flex flex-col hover:-translate-y-2">
+                        <div class="h-48 relative overflow-hidden bg-slate-50">
+                            <img src="${p.img}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            
+                            <div class="absolute top-4 left-4">
+                                <span class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest backdrop-blur-md border ${isInStock ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}">
+                                    <i class="fa-solid ${isInStock ? 'fa-circle-check' : 'fa-circle-xmark'} mr-1"></i> ${isInStock ? 'In Stock' : 'Out of Stock'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="p-6 flex-1 flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] font-black text-purple-600 uppercase tracking-widest">${p.category}</span>
+                                <span class="text-xs font-black text-slate-400">#${p.id}</span>
+                            </div>
+                            <h3 class="font-outfit font-black text-slate-800 text-lg mb-6 leading-tight line-clamp-2">${p.name}</h3>
+                            
+                            <div class="mt-auto space-y-5">
+                                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Store Listing Price</label>
+                                    <div class="relative">
+                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 text-xl font-black text-slate-800">₹</span>
+                                        <input type="number" id="price-${p.id}" value="${p.price}" step="0.01" class="w-full pl-6 bg-transparent text-2xl font-black text-slate-800 focus:outline-none transition">
+                                    </div>
+                                </div>
+                                                          <div class="flex gap-2">
+                                     <div class="flex-1 bg-slate-100 p-1 rounded-xl flex">
+                                         <button onclick="updateProduct(${p.id}, 1)" class="flex-1 py-3 rounded-lg text-xs font-montserrat font-bold transition ${isInStock ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-400 hover:text-slate-600'}">
+                                             ACTIVE
+                                         </button>
+                                         <button onclick="updateProduct(${p.id}, 0)" class="flex-1 py-3 rounded-lg text-xs font-montserrat font-bold transition ${!isInStock ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'text-slate-400 hover:text-slate-600'}">
+                                             SOLD OUT
+                                         </button>
+                                     </div>
+                                     <button onclick="savePrice(${p.id}, ${p.in_stock})" class="w-14 h-14 bg-primary text-white rounded-lg flex items-center justify-center hover:bg-secondary transition-all duration-300 shadow-md group/btn">
+                                         <i class="fa-solid fa-save text-lg group-hover/btn:scale-125 transition"></i>
+                                     </button>
+                                     <button onclick="deleteProduct(${p.id}, '${p.name.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')" class="w-14 h-14 bg-red-50 text-red-400 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-all duration-300 border border-red-100 group/del">
+                                         <i class="fa-solid fa-trash text-lg group-hover/del:scale-125 transition"></i>
+                                     </button>
+                                 </div>        </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function updateProduct(id, inStockVal) {
+            const price = document.getElementById(`price-${id}`).value;
+            await sendUpdate(id, price, inStockVal);
+        }
+
+        async function savePrice(id, currentStockVal) {
+            const price = document.getElementById(`price-${id}`).value;
+            await sendUpdate(id, price, currentStockVal);
+        }
+
+        async function sendUpdate(id, price, inStock) {
+            try {
+                const res = await authFetch(`${API_URL}/vendor/update-product`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        id: id, 
+                        price: parseFloat(price), 
+                        in_stock: inStock,
+                        stock_count: 50 
+                    })
+                });
+                const data = await res.json();
+
+                if(data.status === 'success') {
+                    showToast("Product updated successfully!", "success");
+                    loadVendorProducts(); 
+                } else {
+                    showToast(data.message || "Failed to update", "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const title = document.getElementById('toast-title');
+            
+            if (type === 'success') {
+                toast.className = "fixed top-20 right-5 z-50 bg-white shadow-xl rounded-lg p-4 border-l-4 border-green-500 flex items-center gap-4 transition-all duration-300 transform pointer-events-auto toast-active translate-x-0 opacity-100";
+                icon.className = "fa-solid fa-circle-check text-green-500 text-2xl";
+                title.innerText = "Success";
+                title.className = "font-bold text-green-700 text-sm";
+            } else {
+                toast.className = "fixed top-20 right-5 z-50 bg-white shadow-xl rounded-lg p-4 border-l-4 border-red-500 flex items-center gap-4 transition-all duration-300 transform pointer-events-auto toast-active translate-x-0 opacity-100";
+                icon.className = "fa-solid fa-circle-xmark text-red-500 text-2xl";
+                title.innerText = "Error";
+                title.className = "font-bold text-red-700 text-sm";
+            }
+            
+            document.getElementById('toast-message').innerText = message;
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0', 'opacity-100', 'toast-active');
+                toast.classList.add('translate-x-full', 'opacity-0');
+            }, 3000);
+        }
+
+        // --- DYNAMIC STATS ---
+        async function loadVendorStats() {
+            const shopId = document.getElementById('shop-selector').value;
+            if (!shopId) return;
+            try {
+                const url = `${API_URL}/vendor/stats?shop_id=${encodeURIComponent(shopId)}`;
+                const sep = url.includes('?') ? '&' : '?';
+                const res = await authFetch(url + sep + 't=' + Date.now());
+                const stats = await res.json();
+                document.getElementById('stat-total-items').innerText = stats.total_items || 0;
+                document.getElementById('stat-in-stock').innerText = stats.in_stock || 0;
+                document.getElementById('stat-pending-orders').innerText = stats.pending_orders || 0;
+                document.getElementById('stat-monthly-revenue').innerText = stats.monthly_revenue || '₹0';
+            } catch(e) {
+                console.error('Stats load failed:', e);
+            }
+        }
+
+        // --- DELETE PRODUCT ---
+        async function deleteProduct(id, name) {
+            if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+            try {
+                const res = await authFetch(`${API_URL}/vendor/delete-product`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: id })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showToast('Product deleted!', 'success');
+                    loadVendorProducts();
+                    loadVendorStats();
+                } else {
+                    showToast(data.message || 'Delete failed', 'error');
+                }
+            } catch(e) {
+                showToast('Connection Error', 'error');
+            }
+        }
+
+        // ============================================================
+        // REAL-TIME ORDER NOTIFICATIONS
+        // ============================================================
+        let lastNotifCount = 0;
+        const NOTIF_SOUND = new Audio('data:audio/wav;base64,UklGRl9vT19teleVFZFZm10IBAAAAABAAEAQB8AAEA');
+
+        // Request browser notification permission on load
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        function playNotifSound() {
+            try {
+                // Use Web Audio API for a clean notification beep
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } catch(e) { console.log('Audio not supported'); }
+        }
+
+        function showBrowserNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notif = new Notification(title, {
+                    body: body,
+                    icon: 'logo.png',
+                    badge: 'logo.png',
+                    tag: 'mekalmart-vendor-' + Date.now(),
+                    requireInteraction: true
+                });
+                notif.onclick = function() {
+                    window.focus();
+                    notif.close();
+                };
+            }
+        }
+
+        async function pollNotifications() {
+            if (!activeUser || document.hidden) return; // Stop spam if tab is hidden
+            try {
+                const res = await authFetch(`${API_URL}/notifications?role=vendor&user_id=${encodeURIComponent(activeUser.id)}&t=${Date.now()}`);
+                const notifs = await res.json();
+
+                if (Array.isArray(notifs) && notifs.length > 0 && notifs.length > lastNotifCount) {
+                    const newest = notifs[0];
+                    playNotifSound();
+                    showBrowserNotification(newest.title, newest.message);
+                    showToast(newest.title, 'success');
+
+                    // Refresh stats
+                    loadVendorStats();
+
+                    // Mark as read
+                    try {
+                        await authFetch(`${API_URL}/notifications/mark-read`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ role: 'vendor', user_id: activeUser.id })
+                        });
+                    } catch (err) { }
+                }
+                lastNotifCount = notifs.length;
+            } catch (e) {
+                console.error('Notification poll error:', e);
+            }
+        }
+
+        // Poll every 8 seconds for new orders
+        setInterval(pollNotifications, 8000);
+        pollNotifications();
+    </script>
+</body>
+</html>
