@@ -381,7 +381,7 @@
 
 
         window.onload = async () => {
-            if (!activeUser || (activeUser.role !== 'vendor' && activeUser.role !== 'admin')) {
+            if (!activeUser || activeUser.role !== 'vendor') {
                 localStorage.removeItem('uniMartActiveUser');
                 window.location.href = 'login.html';
             } else {
