@@ -125,8 +125,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                         showToast("Signed in as " + currentUser.name);
                         
                         setTimeout(() => {
-                            if (currentUser.role === 'vendor') {
+                            if (currentUser.role === 'admin') {
                                 window.location.href = 'admin_dashboard.html';
+                            } else if (currentUser.role === 'vendor') {
+                                window.location.href = 'vendor_dashboard.html';
                             } else if (currentUser.role === 'partner' || currentUser.role === 'delivery') {
                                 window.location.href = 'delivery_dashboard.html';
                             } else {
@@ -366,8 +368,10 @@ async function handleAuthAction(e) {
                 initSession(currentUser);
                 
                 setTimeout(() => {
-                    if (currentUser.role === 'vendor') {
+                    if (currentUser.role === 'admin') {
                         window.location.href = 'admin_dashboard.html';
+                    } else if (currentUser.role === 'vendor') {
+                        window.location.href = 'vendor_dashboard.html';
                     } else if (currentUser.role === 'partner' || currentUser.role === 'delivery') {
                         window.location.href = 'delivery_dashboard.html';
                     } else {
@@ -423,8 +427,10 @@ async function triggerMockLogin() {
             initSession(currentUser);
             
             setTimeout(() => {
-                if (currentUser.role === 'vendor') {
+                if (currentUser.role === 'admin') {
                     window.location.href = 'admin_dashboard.html';
+                } else if (currentUser.role === 'vendor') {
+                    window.location.href = 'vendor_dashboard.html';
                 } else if (currentUser.role === 'partner' || currentUser.role === 'delivery') {
                     window.location.href = 'delivery_dashboard.html';
                 } else {
@@ -467,12 +473,10 @@ function updateNavUI() {
     const loggedOutDiv = document.getElementById('nav-logged-out');
     const dashboardBtn = document.getElementById('nav-dashboard-btn');
     const roleBtn = document.getElementById('nav-role-switcher');
-    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 
     if (currentUser) {
         if (loggedInDiv) { loggedInDiv.classList.remove('hidden'); loggedInDiv.classList.add('flex'); }
         if (loggedOutDiv) { loggedOutDiv.classList.add('hidden'); loggedOutDiv.classList.remove('flex'); }
-        if (mobileAuthBtn) mobileAuthBtn.classList.add('hidden');
         
         const usernameEl = document.getElementById('nav-username');
         if (usernameEl && currentUser.name) {
@@ -509,7 +513,6 @@ function updateNavUI() {
     } else {
         if (loggedInDiv) { loggedInDiv.classList.add('hidden'); loggedInDiv.classList.remove('flex'); }
         if (loggedOutDiv) { loggedOutDiv.classList.remove('hidden'); loggedOutDiv.classList.add('flex'); }
-        if (mobileAuthBtn) mobileAuthBtn.classList.remove('hidden');
     }
 }
 

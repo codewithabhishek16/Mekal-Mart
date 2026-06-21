@@ -2033,6 +2033,10 @@ async def serve_manifest():
 async def serve_sw():
     return FileResponse("sw.js", media_type="application/javascript")
 
+@app.get("/login.html")
+async def serve_login():
+    return FileResponse("login.html")
+
 @app.get("/admin_login.html")
 async def serve_admin_login():
     return FileResponse("admin_login.html")
