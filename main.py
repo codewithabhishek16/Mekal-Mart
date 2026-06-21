@@ -295,6 +295,7 @@ def init_db():
                     pickup_pin VARCHAR(4),
                     agent_id INT,
                     delivery_partner_id INT,
+                    shop_id VARCHAR(255) NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -302,6 +303,7 @@ def init_db():
             # Migration helper for existing schema
             cursor.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_pin VARCHAR(4)")
             cursor.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_pin VARCHAR(4)")
+            cursor.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shop_id VARCHAR(255) NULL")
             
             # 7. Notifications Table
             cursor.execute('''
@@ -371,6 +373,12 @@ def get_admin_user(current_user: dict = Depends(get_current_user)):
     role = current_user.get("role")
     if role not in ["vendor", "VENDOR", "admin", "ADMIN"]:
         raise HTTPException(status_code=403, detail="Admin/Vendor permissions required")
+    return current_user
+
+def get_super_admin(current_user: dict = Depends(get_current_user)):
+    role = current_user.get("role")
+    if role not in ["admin", "ADMIN"]:
+        raise HTTPException(status_code=403, detail="Super Admin permissions required")
     return current_user
 
 def get_delivery_user(current_user: dict = Depends(get_current_user)):
@@ -462,6 +470,7 @@ class OrderRequest(BaseModel):
     items: str
     total: float
     payment_method: str
+    shop_id: Optional[str] = None
 
 class OTPRequest(BaseModel):
     email: str
@@ -469,10 +478,11 @@ class OTPRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     email: str
-    otp: str
+    otp: Optional[str] = None
     selected_role: str
     name: Optional[str] = None
     phone: Optional[str] = None
+    password: Optional[str] = None
 
 class SwitchRoleRequest(BaseModel):
     email: str
@@ -496,7 +506,10 @@ async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
     email = data.email.strip().lower()
     selected_role = data.selected_role
     
-    if selected_role not in ["student", "vendor", "partner", "admin"]:
+    if selected_role == 'admin':
+        raise HTTPException(status_code=400, detail="Admin role must login with password.")
+        
+    if selected_role not in ["student", "vendor", "partner"]:
         raise HTTPException(status_code=400, detail="Invalid user role")
         
     # Generate 6-digit OTP
@@ -545,7 +558,6 @@ async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
 @app.post("/auth/login")
 async def login(data: LoginRequest):
     email = data.email.strip().lower()
-    otp = data.otp.strip()
     selected_role = data.selected_role
     phone = data.phone.strip() if data.phone else None
     
@@ -557,7 +569,43 @@ async def login(data: LoginRequest):
         raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
     try:
+        if selected_role == 'admin':
+            admin_email = os.getenv("ADMIN_EMAIL", "admin@mekalmart.com").strip().lower()
+            admin_password = os.getenv("ADMIN_PASSWORD", "MekalAdmin@2026")
+            
+            if email != admin_email or not data.password or data.password != admin_password:
+                raise HTTPException(status_code=401, detail="Invalid admin email or password.")
+            
+            # Check if admin user exists in DB
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+            user = cursor.fetchone()
+            if not user:
+                # Register admin
+                cursor.execute("""
+                    INSERT INTO users (email, role, auth_provider, wallet_balance)
+                    VALUES (%s, 'admin', 'password', 0.00) RETURNING id, email, phone, role, wallet_balance
+                """, (email,))
+                user = cursor.fetchone()
+                conn.commit()
+                
+            token = create_access_token(user["id"], email, "admin")
+            user_data = {
+                "id": user["id"],
+                "email": email,
+                "phone": user["phone"],
+                "name": "Super Admin",
+                "role": "admin",
+                "avatar_url": f"https://api.dicebear.com/7.x/adventurer/svg?seed={email}",
+                "wallet_balance": float(user["wallet_balance"])
+            }
+            return {
+                "status": "success",
+                "token": token,
+                "user": user_data
+            }
+
         # Check OTP
+        otp = data.otp.strip() if data.otp else ""
         cursor.execute("SELECT * FROM otps WHERE email = %s AND otp = %s AND created_at >= NOW() - INTERVAL '10 minutes'", (email, otp))
         otp_row = cursor.fetchone()
         
@@ -805,31 +853,39 @@ async def apply_delivery(data: DeliveryApplication, current_user: dict = Depends
 @app.get("/products")
 async def get_products(shop_id: Optional[str] = None):
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    if shop_id and shop_id != "all":
-        cursor.execute("SELECT id, shop_id, name, category, price, img, stock_count, in_stock, approval_status FROM products WHERE shop_id = %s", (shop_id,))
-    else:
-        cursor.execute("SELECT id, shop_id, name, category, price, img, stock_count, in_stock, approval_status FROM products")
-    products = cursor.fetchall()
-    conn.close()
-    return products
+    try:
+        if shop_id and shop_id != "all":
+            cursor.execute("SELECT id, shop_id, name, category, price, img, stock_count, in_stock, approval_status FROM products WHERE shop_id = %s", (shop_id,))
+        else:
+            cursor.execute("SELECT id, shop_id, name, category, price, img, stock_count, in_stock, approval_status FROM products")
+        products = cursor.fetchall()
+        return products
+    finally:
+        conn.close()
 
 @app.get("/shops")
 async def get_shops():
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT u.email as id, vp.shop_name as name, vp.shop_category as category, vp.shop_image as logo 
-        FROM users u 
-        JOIN vendor_profiles vp ON u.id = vp.user_id 
-        WHERE u.role = 'vendor'
-    """)
-    shops = cursor.fetchall()
-    for shop in shops:
-        if not shop.get('logo'):
-            shop['logo'] = 'store-placeholder.png'
-    conn.close()
-    return shops
+    try:
+        cursor.execute("""
+            SELECT u.email as id, vp.shop_name as name, vp.shop_category as category, vp.shop_image as logo 
+            FROM users u 
+            JOIN vendor_profiles vp ON u.id = vp.user_id 
+            WHERE u.role = 'vendor'
+        """)
+        shops = cursor.fetchall()
+        for shop in shops:
+            if not shop.get('logo'):
+                shop['logo'] = 'store-placeholder.png'
+        return shops
+    finally:
+        conn.close()
 
 # --- ORDER ENDPOINTS ---
 
@@ -863,8 +919,8 @@ async def place_order(data: OrderRequest, background_tasks: BackgroundTasks, cur
             if float(user["wallet_balance"]) < data.total:
                 raise HTTPException(status_code=400, detail="Insufficient wallet balance")
 
-        cursor.execute("INSERT INTO orders (order_id, customer_name, phone, email, hostel, room_no, items, total_amount, delivery_fee, status, delivery_pin, pickup_pin) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                       (order_id, data.name, data.phone, data.email, data.hostel, data.room, data.items, f"₹{data.total}", delivery_fee, "Accepted", delivery_pin, pickup_pin))
+        cursor.execute("INSERT INTO orders (order_id, customer_name, phone, email, hostel, room_no, items, total_amount, delivery_fee, status, delivery_pin, pickup_pin, shop_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                       (order_id, data.name, data.phone, data.email, data.hostel, data.room, data.items, f"₹{data.total}", delivery_fee, "Accepted", delivery_pin, pickup_pin, data.shop_id))
         
         if data.payment_method == "wallet":
             cursor.execute("UPDATE users SET wallet_balance = wallet_balance - %s WHERE id = %s AND wallet_balance >= %s", (data.total, user["id"], data.total))
@@ -975,18 +1031,24 @@ async def get_vendor_stats(shop_id: str, current_user: dict = Depends(get_admin_
         raise HTTPException(status_code=403, detail="Unauthorized stats request")
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT COUNT(*) as total FROM products WHERE shop_id = %s", (shop_id,))
-    total_items = cursor.fetchone()['total']
-    cursor.execute("SELECT COUNT(*) as count FROM products WHERE shop_id = %s AND in_stock = 1", (shop_id,))
-    in_stock = cursor.fetchone()['count']
-    cursor.execute("SELECT COUNT(*) as count FROM orders WHERE status NOT IN ('Delivered') AND status != ''")
-    pending_orders = cursor.fetchone()['count']
-    cursor.execute("SELECT SUM(CAST(REPLACE(REPLACE(total_amount, '₹', ''), ',', '') AS DECIMAL(10,2))) as revenue FROM orders WHERE status = 'Delivered'")
-    revenue = cursor.fetchone()['revenue'] or 0
-    formatted_revenue = f"₹{revenue/1000:.1f}k" if revenue >= 1000 else f"₹{revenue:.0f}"
-    conn.close()
-    return {"total_items": total_items, "in_stock": in_stock, "pending_orders": pending_orders, "monthly_revenue": formatted_revenue}
+    try:
+        cursor.execute("SELECT COUNT(*) as total FROM products WHERE shop_id = %s", (shop_id,))
+        total_items = cursor.fetchone()['total']
+        cursor.execute("SELECT COUNT(*) as count FROM products WHERE shop_id = %s AND in_stock = 1", (shop_id,))
+        in_stock = cursor.fetchone()['count']
+        cursor.execute("SELECT COUNT(*) as count FROM orders WHERE shop_id = %s AND status NOT IN ('Delivered') AND status != ''", (shop_id,))
+        pending_orders = cursor.fetchone()['count']
+        cursor.execute("SELECT SUM(CAST(REPLACE(REPLACE(total_amount, '₹', ''), ',', '') AS DECIMAL(10,2))) as revenue FROM orders WHERE shop_id = %s AND status = 'Delivered'", (shop_id,))
+        revenue = cursor.fetchone()['revenue'] or 0
+        formatted_revenue = f"₹{revenue/1000:.1f}k" if revenue >= 1000 else f"₹{revenue:.0f}"
+        return {"total_items": total_items, "in_stock": in_stock, "pending_orders": pending_orders, "monthly_revenue": formatted_revenue}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.get("/notifications")
 async def get_notifications(user_id: str, role: str, current_user: dict = Depends(get_current_user)):
@@ -999,11 +1061,17 @@ async def get_notifications(user_id: str, role: str, current_user: dict = Depend
         role = 'delivery'
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id, title, message, is_read, created_at FROM notifications WHERE user_id = %s AND role = %s ORDER BY created_at DESC LIMIT 20", (user_id, role))
-    res = cursor.fetchall()
-    conn.close()
-    return res
+    try:
+        cursor.execute("SELECT id, title, message, is_read, created_at FROM notifications WHERE user_id = %s AND role = %s ORDER BY created_at DESC LIMIT 20", (user_id, role))
+        res = cursor.fetchall()
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.post("/notifications/mark-read")
 async def mark_notifications_read(data: dict, current_user: dict = Depends(get_current_user)):
@@ -1014,35 +1082,48 @@ async def mark_notifications_read(data: dict, current_user: dict = Depends(get_c
         raise HTTPException(status_code=403, detail="Unauthorized notification update request")
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor()
-    cursor.execute("UPDATE notifications SET is_read = 1 WHERE user_id = %s AND role = %s", (user_id, role))
-    conn.commit()
-    conn.close()
-    return {"status": "success"}
+    try:
+        cursor.execute("UPDATE notifications SET is_read = 1 WHERE user_id = %s AND role = %s", (user_id, role))
+        conn.commit()
+        return {"status": "success"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.get("/delivery/open-orders")
 async def get_open_orders(current_user: dict = Depends(get_delivery_user)):
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT o.order_id, 
-               coalesce(sp.student_name, o.customer_name) as student_name,
-               coalesce(sp.hostel_name, o.hostel) as hostel_name,
-               coalesce(sp.room_number, o.room_no) as room_number,
-               coalesce(u.phone, o.phone) as phone,
-               o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
-        FROM orders o
-        LEFT JOIN users u ON o.email = u.email
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE o.delivery_partner_id IS NULL AND o.status != 'Delivered'
-        ORDER BY o.created_at DESC
-    """)
-    res = cursor.fetchall()
-    # Mask/hide phone number for privacy on open jobs
-    for row in res:
-        row["phone"] = None
-    conn.close()
-    return res
+    try:
+        cursor.execute("""
+            SELECT o.order_id, 
+                   coalesce(sp.student_name, o.customer_name) as student_name,
+                   coalesce(sp.hostel_name, o.hostel) as hostel_name,
+                   coalesce(sp.room_number, o.room_no) as room_number,
+                   coalesce(u.phone, o.phone) as phone,
+                   o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
+            FROM orders o
+            LEFT JOIN users u ON o.email = u.email
+            LEFT JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE o.delivery_partner_id IS NULL AND o.status != 'Delivered'
+            ORDER BY o.created_at DESC
+        """)
+        res = cursor.fetchall()
+        # Mask/hide phone number for privacy on open jobs
+        for row in res:
+            row["phone"] = None
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.get("/delivery/my-orders")
 async def get_my_orders(agent_id: int, current_user: dict = Depends(get_delivery_user)):
@@ -1050,29 +1131,35 @@ async def get_my_orders(agent_id: int, current_user: dict = Depends(get_delivery
         raise HTTPException(status_code=403, detail="Unauthorized task request")
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT o.order_id, 
-               coalesce(sp.student_name, o.customer_name) as student_name,
-               coalesce(sp.hostel_name, o.hostel) as hostel_name,
-               coalesce(sp.room_number, o.room_no) as room_number,
-               coalesce(u.phone, o.phone) as phone,
-               o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
-        FROM orders o
-        LEFT JOIN users u ON o.email = u.email
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE o.delivery_partner_id = %s AND o.status != 'Delivered'
-        ORDER BY o.created_at DESC
-    """, (agent_id,))
-    res = cursor.fetchall()
-    
-    # Enforce contact records visibility (Privacy Safeguard)
-    for row in res:
-        if row.get("status") not in ["Driver Assigned", "Dispatched", "Out for Delivery", "Picked Up"]:
-            row["phone"] = None
-            
-    conn.close()
-    return res
+    try:
+        cursor.execute("""
+            SELECT o.order_id, 
+                   coalesce(sp.student_name, o.customer_name) as student_name,
+                   coalesce(sp.hostel_name, o.hostel) as hostel_name,
+                   coalesce(sp.room_number, o.room_no) as room_number,
+                   coalesce(u.phone, o.phone) as phone,
+                   o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
+            FROM orders o
+            LEFT JOIN users u ON o.email = u.email
+            LEFT JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE o.delivery_partner_id = %s AND o.status != 'Delivered'
+            ORDER BY o.created_at DESC
+        """, (agent_id,))
+        res = cursor.fetchall()
+        
+        # Enforce contact records visibility (Privacy Safeguard)
+        for row in res:
+            if row.get("status") not in ["Driver Assigned", "Dispatched", "Out for Delivery", "Picked Up"]:
+                row["phone"] = None
+                
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.get("/delivery/history")
 async def get_delivery_history(agent_id: int, current_user: dict = Depends(get_delivery_user)):
@@ -1080,28 +1167,34 @@ async def get_delivery_history(agent_id: int, current_user: dict = Depends(get_d
         raise HTTPException(status_code=403, detail="Unauthorized history request")
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT o.order_id, 
-               coalesce(sp.student_name, o.customer_name) as student_name,
-               coalesce(sp.hostel_name, o.hostel) as hostel_name,
-               coalesce(sp.room_number, o.room_no) as room_number,
-               coalesce(u.phone, o.phone) as phone,
-               o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
-        FROM orders o
-        LEFT JOIN users u ON o.email = u.email
-        LEFT JOIN student_profiles sp ON u.id = sp.user_id
-        WHERE o.delivery_partner_id = %s AND o.status = 'Delivered'
-        ORDER BY o.created_at DESC
-    """, (agent_id,))
-    res = cursor.fetchall()
-    
-    # Enforce contact records visibility (Privacy Safeguard)
-    for row in res:
-        row["phone"] = None
+    try:
+        cursor.execute("""
+            SELECT o.order_id, 
+                   coalesce(sp.student_name, o.customer_name) as student_name,
+                   coalesce(sp.hostel_name, o.hostel) as hostel_name,
+                   coalesce(sp.room_number, o.room_no) as room_number,
+                   coalesce(u.phone, o.phone) as phone,
+                   o.items, o.total_amount, o.delivery_fee, o.status, o.created_at
+            FROM orders o
+            LEFT JOIN users u ON o.email = u.email
+            LEFT JOIN student_profiles sp ON u.id = sp.user_id
+            WHERE o.delivery_partner_id = %s AND o.status = 'Delivered'
+            ORDER BY o.created_at DESC
+        """, (agent_id,))
+        res = cursor.fetchall()
         
-    conn.close()
-    return res
+        # Enforce contact records visibility (Privacy Safeguard)
+        for row in res:
+            row["phone"] = None
+            
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.post("/delivery/accept")
 async def accept_delivery(data: dict, background_tasks: BackgroundTasks, current_user: dict = Depends(get_delivery_user)):
@@ -1112,52 +1205,59 @@ async def accept_delivery(data: dict, background_tasks: BackgroundTasks, current
         raise HTTPException(status_code=403, detail="Unauthorized agent action")
         
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("UPDATE orders SET delivery_partner_id = %s, status = 'Driver Assigned' WHERE order_id = %s AND delivery_partner_id IS NULL", (agent_id, order_id))
-    success = cursor.rowcount > 0
-    
-    info = None
-    if success:
-        # Fetch details for notification email
-        cursor.execute("""
-            SELECT o.email as customer_email, o.customer_name, o.hostel, o.room_no,
-                   pp.partner_name, pp.vehicle_number
-            FROM orders o
-            LEFT JOIN partner_profiles pp ON pp.user_id = %s
-            WHERE o.order_id = %s
-        """, (agent_id, order_id))
-        info = cursor.fetchone()
+    try:
+        cursor.execute("UPDATE orders SET delivery_partner_id = %s, status = 'Driver Assigned' WHERE order_id = %s AND delivery_partner_id IS NULL", (agent_id, order_id))
+        success = cursor.rowcount > 0
         
-    conn.commit()
-    conn.close()
-    
-    if success and info and info.get("customer_email"):
-        cust_email = info["customer_email"]
-        cust_name = info.get("customer_name") or "Student"
-        agent_name = info.get("partner_name") or "Mekal Mart Rider"
-        vehicle_no = info.get("vehicle_number") or "N/A"
-        
-        accept_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-            <h2 style="color: #1B4332; margin-bottom: 20px;">Delivery Agent Assigned!</h2>
-            <p>Hi {cust_name},</p>
-            <p>Great news! A delivery agent has been assigned to your order <strong>#{order_id}</strong>.</p>
+        info = None
+        if success:
+            # Fetch details for notification email
+            cursor.execute("""
+                SELECT o.email as customer_email, o.customer_name, o.hostel, o.room_no,
+                       pp.partner_name, pp.vehicle_number
+                FROM orders o
+                LEFT JOIN partner_profiles pp ON pp.user_id = %s
+                WHERE o.order_id = %s
+            """, (agent_id, order_id))
+            info = cursor.fetchone()
             
-            <div style="background-color: #F9FBFF; padding: 15px; border-radius: 8px; border: 1px solid #e0f3f7; margin-bottom: 20px;">
-                <p style="margin: 0;"><strong>Delivery Partner:</strong> {agent_name}</p>
-                <p style="margin: 5px 0 0 0;"><strong>Vehicle Number:</strong> {vehicle_no}</p>
-                <p style="margin: 5px 0 0 0;"><strong>Destination:</strong> {info.get("hostel")}, Room {info.get("room_no")}</p>
+        conn.commit()
+        
+        if success and info and info.get("customer_email"):
+            cust_email = info["customer_email"]
+            cust_name = info.get("customer_name") or "Student"
+            agent_name = info.get("partner_name") or "Mekal Mart Rider"
+            vehicle_no = info.get("vehicle_number") or "N/A"
+            
+            accept_html = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <h2 style="color: #1B4332; margin-bottom: 20px;">Delivery Agent Assigned!</h2>
+                <p>Hi {cust_name},</p>
+                <p>Great news! A delivery agent has been assigned to your order <strong>#{order_id}</strong>.</p>
+                
+                <div style="background-color: #F9FBFF; padding: 15px; border-radius: 8px; border: 1px solid #e0f3f7; margin-bottom: 20px;">
+                    <p style="margin: 0;"><strong>Delivery Partner:</strong> {agent_name}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Vehicle Number:</strong> {vehicle_no}</p>
+                    <p style="margin: 5px 0 0 0;"><strong>Destination:</strong> {info.get("hostel")}, Room {info.get("room_no")}</p>
+                </div>
+                
+                <p>The rider is now picking up your items from the store and will deliver them shortly. Please be ready to provide your delivery PIN upon arrival.</p>
+                <p style="font-size: 12px; color: #94A3B8; text-align: center; margin-top: 30px; border-top: 1px solid #E2E8F0; padding-top: 10px;">
+                    Mekal Mart - Campus Delivery Platform
+                </p>
             </div>
+            """
+            background_tasks.add_task(send_resend_email, cust_email, f"Delivery Agent Assigned - #{order_id} | Mekal Mart", accept_html)
             
-            <p>The rider is now picking up your items from the store and will deliver them shortly. Please be ready to provide your delivery PIN upon arrival.</p>
-            <p style="font-size: 12px; color: #94A3B8; text-align: center; margin-top: 30px; border-top: 1px solid #E2E8F0; padding-top: 10px;">
-                Mekal Mart - Campus Delivery Platform
-            </p>
-        </div>
-        """
-        background_tasks.add_task(send_resend_email, cust_email, f"Delivery Agent Assigned - #{order_id} | Mekal Mart", accept_html)
-        
-    return {"status": "success" if success else "error"}
+        return {"status": "success" if success else "error"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 @app.post("/delivery/pickup")
 async def pickup_delivery(data: dict, background_tasks: BackgroundTasks, current_user: dict = Depends(get_delivery_user)):
@@ -1437,25 +1537,31 @@ async def get_history(phone: str, current_user: dict = Depends(get_current_user)
 
 
 @app.get("/admin/orders")
-async def admin_get_orders(current_user: dict = Depends(get_admin_user)):
+async def admin_get_orders(current_user: dict = Depends(get_super_admin)):
     conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT id, order_id, customer_name, phone, email, hostel, room_no, items, total_amount, delivery_fee, status, pickup_pin, agent_id, delivery_partner_id, created_at 
-        FROM orders 
-        ORDER BY created_at DESC 
-        LIMIT 50
-    """)
-    orders = cursor.fetchall()
-    conn.close()
-    return orders
+    try:
+        cursor.execute("""
+            SELECT id, order_id, customer_name, phone, email, hostel, room_no, items, total_amount, delivery_fee, status, pickup_pin, agent_id, delivery_partner_id, created_at 
+            FROM orders 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        """)
+        orders = cursor.fetchall()
+        return orders
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
 
 class AdminUpdateStatus(BaseModel):
     order_id: str
     status: str
 
 @app.post("/admin/update_status")
-async def admin_update_status(data: AdminUpdateStatus, current_user: dict = Depends(get_admin_user)):
+async def admin_update_status(data: AdminUpdateStatus, current_user: dict = Depends(get_super_admin)):
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -1580,6 +1686,62 @@ async def delete_product(data: DeleteProduct, current_user: dict = Depends(get_a
         conn.commit()
         return {"status": "success"}
     except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+class VendorUpdateStatus(BaseModel):
+    order_id: str
+    shop_id: str
+    status: str
+
+@app.get("/vendor/orders")
+async def vendor_get_orders(shop_id: str, current_user: dict = Depends(get_admin_user)):
+    # Verify owner
+    if current_user["sub"] != shop_id:
+        raise HTTPException(status_code=403, detail="Unauthorized orders request")
+        
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT id, order_id, customer_name, phone, email, hostel, room_no, items, total_amount, delivery_fee, status, pickup_pin, agent_id, delivery_partner_id, created_at 
+            FROM orders 
+            WHERE shop_id = %s
+            ORDER BY created_at DESC
+        """, (shop_id,))
+        orders = cursor.fetchall()
+        return orders
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.post("/vendor/update-status")
+async def vendor_update_status(data: VendorUpdateStatus, current_user: dict = Depends(get_admin_user)):
+    # Verify owner
+    if current_user["sub"] != data.shop_id:
+        raise HTTPException(status_code=403, detail="Unauthorized order update request")
+        
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Check order belongs to this shop
+        cursor.execute("SELECT shop_id FROM orders WHERE order_id = %s", (data.order_id,))
+        order = cursor.fetchone()
+        if not order or order["shop_id"] != data.shop_id:
+            raise HTTPException(status_code=400, detail="Order not found or does not belong to this shop")
+            
+        cursor.execute("UPDATE orders SET status = %s WHERE order_id = %s", (data.status, data.order_id))
+        conn.commit()
+        return {"status": "success"}
+    except HTTPException:
+        conn.rollback()
         raise
     except Exception as e:
         conn.rollback()
@@ -1753,7 +1915,7 @@ async def get_current_user_profile(current_user: dict = Depends(get_current_user
         conn.close()
 
 @app.get("/admin/pending-requests")
-async def get_pending_requests(current_user: dict = Depends(get_admin_user)):
+async def get_pending_requests(current_user: dict = Depends(get_super_admin)):
     conn = get_db_connection()
     if not conn:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -1798,7 +1960,7 @@ async def get_pending_requests(current_user: dict = Depends(get_admin_user)):
         conn.close()
 
 @app.post("/admin/approve-user")
-async def approve_user(data: ApproveUserRequest, current_user: dict = Depends(get_admin_user)):
+async def approve_user(data: ApproveUserRequest, current_user: dict = Depends(get_super_admin)):
     conn = get_db_connection()
     if not conn:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -1826,7 +1988,7 @@ async def approve_user(data: ApproveUserRequest, current_user: dict = Depends(ge
         conn.close()
 
 @app.post("/admin/approve-product")
-async def approve_product(data: ApproveProductRequest, current_user: dict = Depends(get_admin_user)):
+async def approve_product(data: ApproveProductRequest, current_user: dict = Depends(get_super_admin)):
     conn = get_db_connection()
     if not conn:
         raise HTTPException(status_code=500, detail="Database connection failed")

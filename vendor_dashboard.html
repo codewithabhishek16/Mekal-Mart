@@ -98,8 +98,8 @@
     <nav class="sticky top-0 bg-igntu-navy text-white p-4 shadow-2xl z-50 border-b border-white/10 backdrop-blur-md bg-opacity-95">
         <div class="container mx-auto flex justify-between items-center px-2">
             <div class="flex items-center gap-3">
-                <div class="bg-[#FFB703] text-[#023047] p-2.5 rounded-lg shadow-lg shadow-[#FFB703]/20 rotate-3">
-                    <i class="fa-solid fa-store text-lg"></i>
+                <div class="bg-white/10 border border-white/20 p-1.5 rounded-lg shadow-lg rotate-3 w-12 h-12 flex items-center justify-center overflow-hidden">
+                    <img src="logo.png" alt="Mekal Mart Logo" class="w-full h-full object-contain">
                 </div>
                 <div>
                     <h1 class="text-xl font-montserrat font-bold tracking-tight leading-none text-white">Vendor Portal</h1>
@@ -111,9 +111,9 @@
                     <i class="fa-solid fa-user-circle text-xl group-hover:scale-110 transition"></i>
                 </button>
                 <div class="h-8 w-px bg-white/10 mx-1 hidden md:block"></div>
-                <a href="admin_dashboard.html" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition whitespace-nowrap flex items-center gap-2">
+                <button onclick="switchTab('orders')" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition whitespace-nowrap flex items-center gap-2">
                     <i class="fa-solid fa-receipt"></i> <span class="hidden md:inline">Orders</span>
-                </a>
+                </button>
                 <button onclick="logout()" class="bg-[#FFB703] hover:bg-[#E0A102] text-[#023047] px-4 py-2 rounded-lg text-xs font-montserrat font-bold transition flex items-center gap-2 shadow-lg shadow-[#FFB703]/20">
                     <i class="fa-solid fa-power-off"></i> <span class="hidden md:inline">Logout</span>
                 </button>
@@ -178,8 +178,21 @@
                 </div>
             </div>
 
-            <!-- Search & Filter Area -->
-            <div class="mb-6 flex flex-col md:flex-row gap-4 items-center">
+            <!-- Navigation Tabs -->
+            <div class="flex border-b border-slate-200 mb-6 gap-2">
+                <button id="tab-products" onclick="switchTab('products')" class="px-6 py-3 text-sm font-bold text-primary border-b-2 border-primary transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-box text-base"></i> Inventory
+                </button>
+                <button id="tab-orders" onclick="switchTab('orders')" class="px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-base"></i> Orders
+                </button>
+            </div>
+
+            <!-- Inventory Panel -->
+            <div id="panel-inventory" class="space-y-6">
+
+                <!-- Search & Filter Area -->
+                <div class="mb-6 flex flex-col md:flex-row gap-4 items-center">
                 <div class="relative flex-1 w-full">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-search text-slate-400"></i>
@@ -254,8 +267,34 @@
                 </div>
             </div>
 
+            </div> <!-- End panel-inventory -->
+
+            <!-- Orders Panel -->
+            <div id="panel-orders" class="hidden space-y-6">
+                <!-- Header -->
+                <div class="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-800 font-outfit">Orders Manager</h3>
+                        <p class="text-slate-400 text-xs font-bold mt-1 uppercase tracking-wider">Manage incoming order states</p>
+                    </div>
+                    <button onclick="loadVendorOrders()" class="w-10 h-10 rounded-full bg-slate-50 text-slate-600 hover:bg-slate-100 flex items-center justify-center transition">
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                </div>
+
+                <!-- Orders Container -->
+                <div id="vendor-orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center py-20 text-gray-400">
+                        <i class="fa-solid fa-spinner fa-spin text-3xl mb-4"></i>
+                        <p class="text-xl font-bold">Loading orders...</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </di    <!-- VENDOR PROFILE MODAL -->
+    </div>
+
+    <!-- VENDOR PROFILE MODAL -->
     <div id="vendor-profile-modal" class="fixed inset-0 z-[70] flex items-center justify-center p-4 hidden bg-igntu-navy/40 backdrop-blur-sm">
         <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300 relative pointer-events-auto overflow-hidden" id="profile-card">
             <div class="bg-igntu-navy text-white p-8 relative overflow-hidden">
@@ -354,7 +393,7 @@
                         <span class="text-purple-200 text-xs font-bold">Product Management</span>
                     </div>`;
                 document.getElementById('shop-selector').value = activeUser.email; // Shop ID is the vendor's email address
-                loadVendorProducts();
+                switchTab('products');
                 loadVendorStats();
             }
         };
@@ -698,6 +737,181 @@
                 }
             } catch(e) {
                 showToast('Connection Error', 'error');
+            }
+        }
+
+        // ============================================================
+        // VENDOR ORDERS & TABS LOGIC
+        // ============================================================
+        function switchTab(tab) {
+            const panelInventory = document.getElementById('panel-inventory');
+            const panelOrders = document.getElementById('panel-orders');
+            const tabProducts = document.getElementById('tab-products');
+            const tabOrders = document.getElementById('tab-orders');
+            const btnAddProduct = document.getElementById('btn-add-product');
+
+            if (tab === 'products') {
+                panelInventory.classList.remove('hidden');
+                panelOrders.classList.add('hidden');
+                
+                tabProducts.className = "px-6 py-3 text-sm font-bold text-primary border-b-2 border-primary transition-all duration-300 flex items-center gap-2";
+                tabOrders.className = "px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all duration-300 flex items-center gap-2";
+                
+                if (btnAddProduct) btnAddProduct.classList.remove('hidden');
+                loadVendorProducts();
+            } else if (tab === 'orders') {
+                panelInventory.classList.add('hidden');
+                panelOrders.classList.remove('hidden');
+                
+                tabProducts.className = "px-6 py-3 text-sm font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all duration-300 flex items-center gap-2";
+                tabOrders.className = "px-6 py-3 text-sm font-bold text-primary border-b-2 border-primary transition-all duration-300 flex items-center gap-2";
+                
+                if (btnAddProduct) btnAddProduct.classList.add('hidden');
+                loadVendorOrders();
+            }
+        }
+
+        function getVendorStatusBadge(status) {
+            const styles = {
+                'Accepted': 'bg-blue-50 text-blue-600 border-blue-100',
+                'Driver Assigned': 'bg-sky-50 text-sky-600 border-sky-100',
+                'Packing': 'bg-amber-50 text-amber-600 border-amber-100',
+                'Ready for Pickup': 'bg-teal-50 text-teal-600 border-teal-100',
+                'Dispatched': 'bg-teal-50 text-teal-600 border-teal-100',
+                'Out for Delivery': 'bg-purple-50 text-purple-600 border-purple-100',
+                'Delivered': 'bg-green-50 text-green-600 border-green-100',
+                'Cancelled': 'bg-red-50 text-red-600 border-red-100'
+            };
+            const icons = {
+                'Accepted': 'fa-circle-check',
+                'Driver Assigned': 'fa-user-check',
+                'Packing': 'fa-box-open',
+                'Ready for Pickup': 'fa-circle-arrow-up',
+                'Dispatched': 'fa-circle-arrow-up',
+                'Out for Delivery': 'fa-motorcycle',
+                'Delivered': 'fa-check-double',
+                'Cancelled': 'fa-ban'
+            };
+            const style = styles[status] || 'bg-slate-50 text-slate-600 border-slate-100';
+            const icon = icons[status] || 'fa-clock';
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-bold border ${style} flex items-center gap-1.5 shadow-sm"><i class="fa-solid ${icon}"></i> ${status}</span>`;
+        }
+
+        async function loadVendorOrders() {
+            const shopId = document.getElementById('shop-selector').value;
+            const container = document.getElementById('vendor-orders-container');
+            if (!shopId) return;
+
+            try {
+                const res = await authFetch(`${API_URL}/vendor/orders?shop_id=${encodeURIComponent(shopId)}&t=${Date.now()}`);
+                const orders = await res.json();
+                
+                container.innerHTML = '';
+                
+                if (!Array.isArray(orders) || orders.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-24 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+                            <div class="w-20 h-20 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <h3 class="text-xl font-black text-slate-800">No orders found</h3>
+                            <p class="text-slate-400 mt-2 font-medium">Orders placed for your store will show up here.</p>
+                        </div>`;
+                    return;
+                }
+
+                orders.forEach(order => {
+                    const statusBadge = getVendorStatusBadge(order.status);
+                    let amount = order.total_amount || "0";
+                    amount = amount.replace('₹', '');
+
+                    let actionButtons = '';
+                    if (order.status === 'Accepted' || order.status === 'Driver Assigned') {
+                        actionButtons = `
+                            <button onclick="updateVendorOrderStatus('${order.order_id}', 'Packing')" class="w-full bg-[#FFB703] hover:bg-[#E0A102] text-[#023047] py-2.5 rounded-xl text-xs font-montserrat font-bold transition flex justify-center items-center gap-2 shadow-md">
+                                <i class="fa-solid fa-box"></i> Start Preparing
+                            </button>`;
+                    } else if (order.status === 'Packing') {
+                        actionButtons = `
+                            <button onclick="updateVendorOrderStatus('${order.order_id}', 'Ready for Pickup')" class="w-full bg-primary text-white py-2.5 rounded-xl text-xs font-montserrat font-bold hover:bg-secondary transition flex justify-center items-center gap-2 shadow-md">
+                                <i class="fa-solid fa-check"></i> Mark Ready for Pickup
+                            </button>`;
+                    } else {
+                        actionButtons = `<div class="text-center text-xs text-slate-400 font-bold py-2"><i class="fa-solid fa-info-circle mr-1"></i> Managed by Delivery Flow</div>`;
+                    }
+
+                    container.innerHTML += `
+                        <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-purple-500/10 transition-all duration-500 overflow-hidden flex flex-col hover:-translate-y-2">
+                            <div class="p-5 border-b border-slate-50 flex justify-between items-start bg-slate-50/50">
+                                <div>
+                                    <span class="font-black text-slate-800 text-lg">#${order.order_id}</span>
+                                    <p class="text-[10px] text-slate-400 mt-0.5"><i class="fa-regular fa-clock mr-1"></i> ${new Date(order.created_at).toLocaleString()}</p>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            
+                            <div class="p-6 flex-1 flex flex-col justify-between">
+                                <div class="mb-4">
+                                    <h3 class="font-black text-slate-800 text-base mb-2">${order.customer_name}</h3>
+                                    <div class="text-xs text-slate-500 space-y-1.5">
+                                        <p><i class="fa-solid fa-location-dot w-5 text-center text-purple-600"></i> ${order.hostel}, Room ${order.room_no}</p>
+                                        <p><i class="fa-solid fa-phone w-5 text-center text-purple-600"></i> ${order.phone || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-purple-50/50 p-4 rounded-2xl border border-purple-50 text-xs text-slate-700 mb-4 whitespace-pre-line leading-relaxed">
+                                    <span class="text-[9px] font-black text-purple-600 uppercase tracking-wider block mb-1.5">Items</span>
+                                    ${order.items}
+                                </div>
+                                
+                                ${order.pickup_pin ? `
+                                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-xs text-amber-800 text-center mb-4">
+                                    <span class="font-black uppercase text-[10px] tracking-wider block mb-1">Rider Pickup Verification PIN</span>
+                                    <span class="font-black text-2xl tracking-widest text-[#E0A102]">${order.pickup_pin}</span>
+                                </div>` : ''}
+                            </div>
+
+                            <div class="p-5 bg-slate-50 border-t border-slate-100 mt-auto">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Earnings</span>
+                                    <span class="text-xl font-black text-slate-800">₹${amount}</span>
+                                </div>
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {
+                console.error("Fetch Error:", e);
+                container.innerHTML = '<p class="text-center text-red-500 col-span-full font-bold">Connection Error. Please check your backend.</p>';
+            }
+        }
+
+        async function updateVendorOrderStatus(orderId, newStatus) {
+            const shopId = document.getElementById('shop-selector').value;
+            try {
+                const res = await authFetch(`${API_URL}/vendor/update-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        order_id: orderId, 
+                        shop_id: shopId, 
+                        status: newStatus 
+                    })
+                });
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    showToast(`Order status updated to "${newStatus}"!`, "success");
+                    loadVendorOrders();
+                    loadVendorStats();
+                } else {
+                    showToast(data.message || "Failed to update status", "error");
+                }
+            } catch(e) {
+                showToast("Connection Error", "error");
             }
         }
 

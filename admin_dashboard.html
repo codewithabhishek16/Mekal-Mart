@@ -95,13 +95,15 @@
     <nav class="glass bg-gradient-to-r from-primary to-secondary text-white p-4 shadow-xl z-30 border-b border-indigo-500/20">
         <div class="container mx-auto flex flex-wrap justify-between items-center gap-y-2">
             <div class="flex items-center gap-3">
-                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-lg text-white shadow-inner">
-                    <i class="fa-solid fa-user-shield"></i>
+                <div class="bg-white/10 border border-white/20 p-1.5 rounded-lg shadow-lg rotate-3 w-12 h-12 flex items-center justify-center overflow-hidden">
+                    <img src="logo.png" alt="Mekal Mart Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-xl font-montserrat font-bold tracking-wide">Orders</h1>
+                <div>
+                    <h1 class="text-xl font-montserrat font-bold tracking-wide leading-none">Admin Panel</h1>
+                    <p class="text-[10px] text-yellow-300 uppercase font-bold tracking-widest mt-1">Mekal Mart Operations Control</p>
+                </div>
             </div>
             <div class="flex items-center gap-4">
-                <a href="vendor_dashboard.html" class="text-sm font-montserrat font-bold text-indigo-100 hover:text-white transition"><i class="fa-solid fa-store mr-1"></i> Vendor Portal</a>
                 <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-montserrat font-bold transition flex items-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
@@ -173,7 +175,7 @@
     <script>
         // 1. Check Auth on Load
         const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
-        if (!activeUser || (activeUser.role !== 'vendor' && activeUser.role !== 'admin')) {
+        if (!activeUser || activeUser.role !== 'admin') {
             window.location.href = 'login.html';
         }
 

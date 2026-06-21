@@ -467,35 +467,49 @@ function updateNavUI() {
     const loggedOutDiv = document.getElementById('nav-logged-out');
     const dashboardBtn = document.getElementById('nav-dashboard-btn');
     const roleBtn = document.getElementById('nav-role-switcher');
+    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 
     if (currentUser) {
-        loggedInDiv.classList.remove('hidden'); loggedInDiv.classList.add('flex');
-        loggedOutDiv.classList.add('hidden');
-        loggedOutDiv.classList.remove('flex');
-        document.getElementById('nav-username').innerText = currentUser.name.split(' ')[0];
+        if (loggedInDiv) { loggedInDiv.classList.remove('hidden'); loggedInDiv.classList.add('flex'); }
+        if (loggedOutDiv) { loggedOutDiv.classList.add('hidden'); loggedOutDiv.classList.remove('flex'); }
+        if (mobileAuthBtn) mobileAuthBtn.classList.add('hidden');
+        
+        const usernameEl = document.getElementById('nav-username');
+        if (usernameEl && currentUser.name) {
+            usernameEl.innerText = currentUser.name.split(' ')[0];
+        }
 
         if (currentUser.role === 'vendor') {
-            dashboardBtn.classList.remove('hidden');
-            if(roleBtn) roleBtn.classList.add('hidden');
-            dashboardBtn.onclick = () => { window.location.href = 'vendor_dashboard.html'; };
+            if (dashboardBtn) {
+                dashboardBtn.classList.remove('hidden');
+                dashboardBtn.onclick = () => { window.location.href = 'vendor_dashboard.html'; };
+            }
+            if (roleBtn) roleBtn.classList.add('hidden');
         } else if (currentUser.role === 'partner' || currentUser.role === 'delivery') {
-            dashboardBtn.classList.remove('hidden');
-            if(roleBtn) {
-                roleBtn.classList.remove('hidden');
-                document.getElementById('nav-role-switcher-text').innerText = 'Switch to Shopping';
+            if (dashboardBtn) {
+                dashboardBtn.classList.remove('hidden');
+                dashboardBtn.onclick = () => { window.location.href = 'delivery_dashboard.html'; };
             }
-            dashboardBtn.onclick = () => { window.location.href = 'delivery_dashboard.html'; };
+            if (roleBtn) {
+                roleBtn.classList.remove('hidden');
+                const switchText = document.getElementById('nav-role-switcher-text');
+                if (switchText) switchText.innerText = 'Switch to Shopping';
+            }
+        } else if (currentUser.role === 'admin') {
+            if (dashboardBtn) {
+                dashboardBtn.classList.remove('hidden');
+                dashboardBtn.onclick = () => { window.location.href = 'admin_dashboard.html'; };
+            }
+            if (roleBtn) roleBtn.classList.add('hidden');
         } else {
-            dashboardBtn.classList.add('hidden');
-            if(roleBtn) {
-                roleBtn.classList.remove('hidden');
-                document.getElementById('nav-role-switcher-text').innerText = 'Switch to Delivery';
-            }
+            // Student role: remove all other buttons except cart, account, logout
+            if (dashboardBtn) dashboardBtn.classList.add('hidden');
+            if (roleBtn) roleBtn.classList.add('hidden');
         }
     } else {
-        loggedInDiv.classList.add('hidden'); loggedInDiv.classList.remove('flex');
-        loggedOutDiv.classList.remove('hidden');
-        loggedOutDiv.classList.add('flex');
+        if (loggedInDiv) { loggedInDiv.classList.add('hidden'); loggedInDiv.classList.remove('flex'); }
+        if (loggedOutDiv) { loggedOutDiv.classList.remove('hidden'); loggedOutDiv.classList.add('flex'); }
+        if (mobileAuthBtn) mobileAuthBtn.classList.remove('hidden');
     }
 }
 
@@ -1054,7 +1068,8 @@ async function placeOrder() {
                 name, email, phone, hostel, room,
                 items: itemsSummary,
                 total: totalAmount,
-                payment_method: method
+                payment_method: method,
+                shop_id: cart.length > 0 ? cart[0].shop_id : null
             })
         });
         const result = await response.json();

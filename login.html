@@ -62,8 +62,8 @@
         <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-[#FFB703]/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="text-center mb-8 relative">
-            <div class="mx-auto w-16 h-16 bg-gradient-to-tr from-[#1B4332] to-[#219EBC] rounded-2xl flex items-center justify-center shadow-lg mb-4">
-                <i class="fa-solid fa-user-shield text-2xl text-white"></i>
+            <div class="mx-auto w-20 h-20 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center justify-center shadow-lg mb-4 overflow-hidden p-2">
+                <img src="logo.png" alt="Mekal Mart Logo" class="w-full h-full object-contain">
             </div>
             <h2 class="text-3xl font-black font-outfit text-white tracking-tight">Mekal Mart Gateway</h2>
             <p class="text-slate-400 text-xs mt-1 font-bold uppercase tracking-widest">Select your login portal to continue</p>
@@ -118,6 +118,12 @@
             <div class="space-y-2" id="email-input-container">
                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1" id="email-label">Campus Email Address</label>
                 <input type="email" id="auth-email" placeholder="e.g. name@university.edu" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
+            </div>
+
+            <!-- Password Input -->
+            <div class="space-y-2 hidden" id="password-input-container">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Admin Password</label>
+                <input type="password" id="auth-password" placeholder="Enter super admin password" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
             </div>
 
             <!-- OTP Input -->
@@ -177,6 +183,7 @@
             const nameCont = document.getElementById('name-input-container');
             const phoneCont = document.getElementById('phone-input-container');
             const emailCont = document.getElementById('email-input-container');
+            const passwordCont = document.getElementById('password-input-container');
             const otpCont = document.getElementById('otp-input-container');
             const emailLabel = document.getElementById('email-label');
             const authEmailInput = document.getElementById('auth-email');
@@ -184,19 +191,26 @@
             if (nameCont) nameCont.classList.remove('hidden');
             if (phoneCont) phoneCont.classList.remove('hidden');
             if (emailCont) emailCont.classList.remove('hidden');
+            if (passwordCont) passwordCont.classList.add('hidden');
             if (otpCont) otpCont.classList.add('hidden');
             
             document.getElementById('auth-name').value = '';
             document.getElementById('auth-phone').value = '';
             document.getElementById('auth-email').value = '';
+            if (document.getElementById('auth-password')) document.getElementById('auth-password').value = '';
             document.getElementById('auth-otp').value = '';
             document.getElementById('auth-btn-text').innerText = "Get Verification Code";
             document.getElementById('auth-btn-icon').className = "fa-solid fa-paper-plane text-lg text-[#023047]";
             showMessage("", false);
 
             if (role === 'admin') {
+                if (nameCont) nameCont.classList.add('hidden');
+                if (phoneCont) phoneCont.classList.add('hidden');
+                if (passwordCont) passwordCont.classList.remove('hidden');
                 emailLabel.innerText = "Admin Email Address";
                 authEmailInput.placeholder = "e.g. admin@mekalmart.com";
+                document.getElementById('auth-btn-text').innerText = "Verify & Login";
+                document.getElementById('auth-btn-icon').className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
             } else if (role === 'vendor') {
                 emailLabel.innerText = "Vendor Email Address";
                 authEmailInput.placeholder = "e.g. vendor@university.edu";
@@ -218,15 +232,58 @@
         async function handleAuthAction(e) {
             if (e) e.preventDefault();
             
-            const name = document.getElementById('auth-name').value.trim();
-            const phone = document.getElementById('auth-phone').value.trim();
             const email = document.getElementById('auth-email').value.trim();
-            
-            const otpContainer = document.getElementById('otp-input-container');
-            const otpInput = document.getElementById('auth-otp');
             const btnText = document.getElementById('auth-btn-text');
             const btnIcon = document.getElementById('auth-btn-icon');
             const btn = document.getElementById('btn-auth-action');
+
+            if (currentRole === 'admin') {
+                const password = document.getElementById('auth-password').value.trim();
+                if (!email) return showMessage("Please enter your admin email!", true);
+                if (!password) return showMessage("Please enter your admin password!", true);
+                
+                const originalText = btnText.innerText;
+                btnText.innerText = "Verifying...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, selected_role: 'admin', password: password })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok && data.status === 'success') {
+                        showMessage("Login successful!", false);
+                        localStorage.setItem('uniMartToken', data.token);
+                        localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
+                        localStorage.setItem('uniActiveRole', data.user.role);
+                        
+                        setTimeout(() => {
+                            window.location.href = 'admin_dashboard.html';
+                        }, 1000);
+                    } else {
+                        showMessage(data.detail || data.message || "Invalid admin credentials.", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
+                } finally {
+                    btn.disabled = false;
+                }
+                return;
+            }
+
+            const name = document.getElementById('auth-name').value.trim();
+            const phone = document.getElementById('auth-phone').value.trim();
+            
+            const otpContainer = document.getElementById('otp-input-container');
+            const otpInput = document.getElementById('auth-otp');
             
             if (otpContainer.classList.contains('hidden')) {
                 if (!name) return showMessage("Please enter your name!", true);
