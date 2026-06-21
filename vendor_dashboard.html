@@ -548,7 +548,16 @@
             try {
                 const res = await authFetch(`${API_URL}/products?shop_id=${encodeURIComponent(shopId)}&t=${new Date().getTime()}`);
                 allProducts = await res.json();
-                
+                allProducts = allProducts.map(p => {
+                    let imgUrl = p.img || 'store-placeholder.png';
+                    if (!imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+                        const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                        const relPath = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+                        imgUrl = baseUrl + relPath;
+                    }
+                    p.img = imgUrl;
+                    return p;
+                });
                 renderProductsGrid(allProducts);
             } catch(e) {
                 console.error("Fetch Error:", e);

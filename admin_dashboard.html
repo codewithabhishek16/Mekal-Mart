@@ -384,6 +384,46 @@
                 });
                 if (!res.ok) throw new Error("Failed to load approvals");
                 const data = await res.json();
+                
+                // Prefix relative image paths with API_URL
+                if (data.vendors) {
+                    data.vendors = data.vendors.map(v => {
+                        let imgUrl = v.shop_image || 'store-placeholder.png';
+                        if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+                            const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                            const relPath = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+                            imgUrl = baseUrl + relPath;
+                        }
+                        v.shop_image = imgUrl;
+                        return v;
+                    });
+                }
+                
+                if (data.riders) {
+                    data.riders = data.riders.map(r => {
+                        let imgUrl = r.profile_image || 'logo.png';
+                        if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+                            const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                            const relPath = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+                            imgUrl = baseUrl + relPath;
+                        }
+                        r.profile_image = imgUrl;
+                        return r;
+                    });
+                }
+
+                if (data.products) {
+                    data.products = data.products.map(p => {
+                        let imgUrl = p.img || 'store-placeholder.png';
+                        if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+                            const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                            const relPath = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+                            imgUrl = baseUrl + relPath;
+                        }
+                        p.img = imgUrl;
+                        return p;
+                    });
+                }
 
                 // Render Vendors
                 vendorsList.innerHTML = '';

@@ -172,11 +172,20 @@ async function fetchProductsFromDB() {
         const data = await response.json();
 
         if (Array.isArray(data) && data.length > 0) {
-            products = data.filter(p => p.approval_status === 'Approved').map(p => ({
-                ...p,
-                shop_id: p.shop_id || p.shopId,
-                in_stock: p.in_stock !== undefined ? parseInt(p.in_stock) : 1
-            }));
+            products = data.filter(p => p.approval_status === 'Approved').map(p => {
+                let imgUrl = p.img || 'store-placeholder.png';
+                if (!imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+                    const baseUrl = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                    const relPath = imgUrl.startsWith('/') ? imgUrl : '/' + imgUrl;
+                    imgUrl = baseUrl + relPath;
+                }
+                return {
+                    ...p,
+                    img: imgUrl,
+                    shop_id: p.shop_id || p.shopId,
+                    in_stock: p.in_stock !== undefined ? parseInt(p.in_stock) : 1
+                };
+            });
             filterProducts('all');
             if (currentUser) fetchAIRecommendations();
         } else {
@@ -189,40 +198,7 @@ async function fetchProductsFromDB() {
 }
 
 function openAuthModal(role = 'student') { 
-    setAuthRole(role);
-    
-    // Reset login form fields and their visibility
-    const nameCont = document.getElementById('name-input-container');
-    const phoneCont = document.getElementById('phone-input-container');
-    const emailCont = document.getElementById('email-input-container');
-    const otpCont = document.getElementById('otp-input-container');
-    
-    if (nameCont) nameCont.classList.remove('hidden');
-    if (phoneCont) phoneCont.classList.remove('hidden');
-    if (emailCont) emailCont.classList.remove('hidden');
-    if (otpCont) otpCont.classList.add('hidden');
-    
-    const nameInput = document.getElementById('auth-name');
-    const phoneInput = document.getElementById('auth-phone');
-    const emailInput = document.getElementById('auth-email');
-    const otpInput = document.getElementById('auth-otp');
-    const btnText = document.getElementById('auth-btn-text');
-    const btnIcon = document.getElementById('auth-btn-icon');
-    
-    if (nameInput) nameInput.value = '';
-    if (phoneInput) phoneInput.value = '';
-    if (emailInput) emailInput.value = '';
-    if (otpInput) otpInput.value = '';
-    if (btnText) btnText.innerText = "Get Verification Code";
-    if (btnIcon) btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#FFB703]";
-    
-    const modal = document.getElementById('auth-modal');
-    const card = document.getElementById('auth-card');
-    modal.classList.remove('hidden');
-    setTimeout(() => {
-        card.classList.remove('scale-95', 'opacity-0');
-        card.classList.add('scale-100', 'opacity-100');
-    }, 10);
+    window.location.href = 'login.html';
 }
 
 function closeAuthModal() { 
