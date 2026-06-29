@@ -70,7 +70,7 @@
         </div>
 
         <!-- Role Gateway Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div class="grid grid-cols-3 gap-3 mb-8">
             <div onclick="selectRole('student')" id="role-student" class="role-card p-4 rounded-2xl cursor-pointer text-center flex flex-col items-center justify-center gap-2 hover:border-slate-400">
                 <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
                     <i class="fa-solid fa-graduation-cap"></i>
@@ -91,25 +91,18 @@
                 </div>
                 <span class="text-xs font-black text-white uppercase tracking-wider">Rider</span>
             </div>
-
-            <div onclick="selectRole('admin')" id="role-admin" class="role-card p-4 rounded-2xl cursor-pointer text-center flex flex-col items-center justify-center gap-2 hover:border-slate-400">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
-                    <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <span class="text-xs font-black text-white uppercase tracking-wider">Admin</span>
-            </div>
         </div>
 
         <!-- Login Form Wrapper -->
         <div class="space-y-4 max-w-md mx-auto">
             <!-- Full Name -->
-            <div class="space-y-2" id="name-input-container">
+            <div class="space-y-2 hidden" id="name-input-container">
                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                 <input type="text" id="auth-name" placeholder="Enter full name" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
             </div>
             
             <!-- Mobile Number -->
-            <div class="space-y-2" id="phone-input-container">
+            <div class="space-y-2 hidden" id="phone-input-container">
                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mobile Number</label>
                 <input type="tel" id="auth-phone" placeholder="10-digit phone number" maxlength="10" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
             </div>
@@ -121,9 +114,12 @@
             </div>
 
             <!-- Password Input -->
-            <div class="space-y-2 hidden" id="password-input-container">
-                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Admin Password</label>
-                <input type="password" id="auth-password" placeholder="Enter super admin password" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
+            <div class="space-y-2" id="password-input-container">
+                <div class="flex justify-between items-center px-1">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Password</label>
+                    <a href="#" onclick="toggleForgotPassword(event)" id="forgot-password-link" class="text-[10px] font-bold text-slate-400 hover:text-white transition">Forgot Password?</a>
+                </div>
+                <input type="password" id="auth-password" placeholder="Enter password" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
             </div>
 
             <!-- OTP Input -->
@@ -132,11 +128,24 @@
                 <input type="text" id="auth-otp" placeholder="Enter 6-digit code" maxlength="6" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold tracking-widest text-center focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
             </div>
 
+            <!-- New Password Input (for reset password flow) -->
+            <div class="space-y-2 hidden" id="new-password-input-container">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                <input type="password" id="auth-new-password" placeholder="Enter new password" class="w-full px-4 py-3 bg-slate-900 border border-slate-800 text-white rounded-xl text-sm font-bold focus:outline-none focus:ring-4 focus:ring-[#FFB703]/20 transition">
+            </div>
+
             <!-- Action Button -->
             <button type="button" onclick="handleAuthAction(event)" id="btn-auth-action" class="w-full py-4 bg-gradient-to-r from-[#FFB703] to-[#E0A102] text-[#023047] hover:shadow-lg rounded-2xl font-montserrat font-bold shadow-md transition-all transform hover:-translate-y-0.5 active:scale-95 text-base flex items-center justify-center gap-3">
-                <i class="fa-solid fa-paper-plane text-lg text-[#023047]" id="auth-btn-icon"></i>
-                <span id="auth-btn-text">Get Verification Code</span>
+                <i class="fa-solid fa-right-to-bracket text-lg text-[#023047]" id="auth-btn-icon"></i>
+                <span id="auth-btn-text">Sign In</span>
             </button>
+
+            <!-- Mode Toggle Link -->
+            <div class="text-center mt-4" id="mode-toggle-container">
+                <a href="#" onclick="toggleAuthMode(event)" id="toggle-mode-text" class="text-xs text-slate-400 hover:text-white hover:underline transition">
+                    Don't have an account? Register
+                </a>
+            </div>
 
             <!-- Mock Bypass Login -->
             <div class="text-center hidden" id="mock-login-container">
@@ -155,6 +164,7 @@
     <script src="config.js"></script>
     <script>
         let currentRole = 'student';
+        let authMode = 'login'; // login, register, forgot, reset
 
         document.addEventListener('DOMContentLoaded', () => {
             const mockLoginContainer = document.getElementById('mock-login-container');
@@ -173,6 +183,71 @@
             selectRole('student');
         });
 
+        function setAuthMode(mode) {
+            authMode = mode;
+            showMessage("", false);
+            
+            const nameCont = document.getElementById('name-input-container');
+            const phoneCont = document.getElementById('phone-input-container');
+            const emailCont = document.getElementById('email-input-container');
+            const passwordCont = document.getElementById('password-input-container');
+            const otpCont = document.getElementById('otp-input-container');
+            const newPasswordCont = document.getElementById('new-password-input-container');
+            const toggleText = document.getElementById('toggle-mode-text');
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            
+            // Default show/hide values
+            nameCont.classList.add('hidden');
+            phoneCont.classList.add('hidden');
+            emailCont.classList.remove('hidden');
+            passwordCont.classList.add('hidden');
+            otpCont.classList.add('hidden');
+            newPasswordCont.classList.add('hidden');
+            
+            if (mode === 'login') {
+                passwordCont.classList.remove('hidden');
+                btnText.innerText = "Sign In";
+                btnIcon.className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
+                toggleText.innerText = "Don't have an account? Register";
+                toggleText.classList.remove('hidden');
+            } else if (mode === 'register') {
+                nameCont.classList.remove('hidden');
+                phoneCont.classList.remove('hidden');
+                passwordCont.classList.remove('hidden');
+                btnText.innerText = "Register & Sign In";
+                btnIcon.className = "fa-solid fa-user-plus text-lg text-[#023047]";
+                toggleText.innerText = "Already have an account? Sign In";
+                toggleText.classList.remove('hidden');
+            } else if (mode === 'forgot') {
+                btnText.innerText = "Send Verification Code";
+                btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#023047]";
+                toggleText.innerText = "Back to Sign In";
+                toggleText.classList.remove('hidden');
+            } else if (mode === 'reset') {
+                otpCont.classList.remove('hidden');
+                newPasswordCont.classList.remove('hidden');
+                btnText.innerText = "Reset Password";
+                btnIcon.className = "fa-solid fa-key text-lg text-[#023047]";
+                toggleText.innerText = "Back to Sign In";
+                toggleText.classList.remove('hidden');
+            }
+        }
+
+        function toggleAuthMode(e) {
+            if (e) e.preventDefault();
+            if (authMode === 'login') {
+                setAuthMode('register');
+            } else {
+                setAuthMode('login');
+            }
+        }
+
+        function toggleForgotPassword(e) {
+            if (e) e.preventDefault();
+            setAuthMode('forgot');
+        }
+
         function selectRole(role) {
             currentRole = role;
             
@@ -180,38 +255,18 @@
             document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
             document.getElementById(`role-${role}`).classList.add('active');
             
-            const nameCont = document.getElementById('name-input-container');
-            const phoneCont = document.getElementById('phone-input-container');
-            const emailCont = document.getElementById('email-input-container');
-            const passwordCont = document.getElementById('password-input-container');
-            const otpCont = document.getElementById('otp-input-container');
             const emailLabel = document.getElementById('email-label');
             const authEmailInput = document.getElementById('auth-email');
             
-            if (nameCont) nameCont.classList.remove('hidden');
-            if (phoneCont) phoneCont.classList.remove('hidden');
-            if (emailCont) emailCont.classList.remove('hidden');
-            if (passwordCont) passwordCont.classList.add('hidden');
-            if (otpCont) otpCont.classList.add('hidden');
-            
+            // Reset input values
             document.getElementById('auth-name').value = '';
             document.getElementById('auth-phone').value = '';
             document.getElementById('auth-email').value = '';
-            if (document.getElementById('auth-password')) document.getElementById('auth-password').value = '';
+            document.getElementById('auth-password').value = '';
             document.getElementById('auth-otp').value = '';
-            document.getElementById('auth-btn-text').innerText = "Get Verification Code";
-            document.getElementById('auth-btn-icon').className = "fa-solid fa-paper-plane text-lg text-[#023047]";
-            showMessage("", false);
-
-            if (role === 'admin') {
-                if (nameCont) nameCont.classList.add('hidden');
-                if (phoneCont) phoneCont.classList.add('hidden');
-                if (passwordCont) passwordCont.classList.remove('hidden');
-                emailLabel.innerText = "Admin Email Address";
-                authEmailInput.placeholder = "e.g. admin@mekalmart.com";
-                document.getElementById('auth-btn-text').innerText = "Verify & Login";
-                document.getElementById('auth-btn-icon').className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
-            } else if (role === 'vendor') {
+            document.getElementById('auth-new-password').value = '';
+            
+            if (role === 'vendor') {
                 emailLabel.innerText = "Vendor Email Address";
                 authEmailInput.placeholder = "e.g. vendor@university.edu";
             } else if (role === 'partner') {
@@ -221,6 +276,8 @@
                 emailLabel.innerText = "Campus Email Address";
                 authEmailInput.placeholder = "e.g. student@university.edu";
             }
+            
+            setAuthMode('login');
         }
 
         function showMessage(text, isError = true) {
@@ -236,14 +293,17 @@
             const btnText = document.getElementById('auth-btn-text');
             const btnIcon = document.getElementById('auth-btn-icon');
             const btn = document.getElementById('btn-auth-action');
+            
+            const originalText = btnText.innerText;
+            const originalIconClass = btnIcon.className;
 
-            if (currentRole === 'admin') {
+            if (!email) return showMessage("Please enter your email address!", true);
+
+            if (authMode === 'login') {
                 const password = document.getElementById('auth-password').value.trim();
-                if (!email) return showMessage("Please enter your admin email!", true);
-                if (!password) return showMessage("Please enter your admin password!", true);
-                
-                const originalText = btnText.innerText;
-                btnText.innerText = "Verifying...";
+                if (!password) return showMessage("Please enter your password!", true);
+
+                btnText.innerText = "Signing In...";
                 btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
                 btn.disabled = true;
 
@@ -251,125 +311,16 @@
                     const res = await fetch(`${API_URL}/auth/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, selected_role: 'admin', password: password })
+                        body: JSON.stringify({ email: email, password: password, selected_role: currentRole })
                     });
                     const data = await res.json();
-                    
-                    if (res.ok && data.status === 'success') {
-                        showMessage("Login successful!", false);
-                        localStorage.setItem('uniMartToken', data.token);
-                        localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
-                        localStorage.setItem('uniActiveRole', data.user.role);
-                        
-                        setTimeout(() => {
-                            window.location.href = 'admin_dashboard.html';
-                        }, 1000);
-                    } else {
-                        showMessage(data.detail || data.message || "Invalid admin credentials.", true);
-                        btnText.innerText = originalText;
-                        btnIcon.className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
-                    }
-                } catch (err) {
-                    showMessage("Connection error. Please try again.", true);
-                    btnText.innerText = originalText;
-                    btnIcon.className = "fa-solid fa-right-to-bracket text-lg text-[#023047]";
-                } finally {
-                    btn.disabled = false;
-                }
-                return;
-            }
 
-            const name = document.getElementById('auth-name').value.trim();
-            const phone = document.getElementById('auth-phone').value.trim();
-            
-            const otpContainer = document.getElementById('otp-input-container');
-            const otpInput = document.getElementById('auth-otp');
-            
-            if (otpContainer.classList.contains('hidden')) {
-                if (!name) return showMessage("Please enter your name!", true);
-                if (!phone || phone.length !== 10) return showMessage("Please enter a valid 10-digit mobile number!", true);
-                if (!email) return showMessage("Please enter your email address!", true);
-                
-                const originalText = btnText.innerText;
-                btnText.innerText = "Sending Code...";
-                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
-                btn.disabled = true;
-                
-                try {
-                    const res = await fetch(`${API_URL}/auth/request-otp`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, selected_role: currentRole })
-                    });
-                    const data = await res.json();
-                    
-                    if (res.ok && data.status === 'success') {
-                        otpContainer.classList.remove('hidden');
-                        
-                        // Hide inputs
-                        document.getElementById('name-input-container').classList.add('hidden');
-                        document.getElementById('phone-input-container').classList.add('hidden');
-                        document.getElementById('email-input-container').classList.add('hidden');
-                        
-                        btnText.innerText = "Verify & Login";
-                        btnIcon.className = "fa-solid fa-check text-lg text-[#023047]";
-                        
-                        if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
-                            const templateParams = {
-                                to_email: email,
-                                to_name: name,
-                                otp_code: data.otp,
-                                otp: data.otp,
-                                verification_code: data.otp,
-                                message: `Your Mekal Mart verification code is ${data.otp}`
-                            };
-                            emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
-                                .then(() => {
-                                    showMessage("Verification code sent to your email!", false);
-                                }, (err) => {
-                                    console.error("EmailJS Send Error:", err);
-                                    showMessage("EmailJS failed to send. Developer fallback code: " + data.otp, false);
-                                    otpInput.value = data.otp;
-                                });
-                        } else {
-                            otpInput.value = data.otp;
-                            showMessage("EmailJS not configured. Auto-filled code: " + data.otp, false);
-                        }
-                    } else {
-                        showMessage(data.detail || data.message || "Failed to send code", true);
-                        btnText.innerText = originalText;
-                        btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#023047]";
-                    }
-                } catch (err) {
-                    showMessage("Connection error. Please try again.", true);
-                    btnText.innerText = originalText;
-                    btnIcon.className = "fa-solid fa-paper-plane text-lg text-[#023047]";
-                } finally {
-                    btn.disabled = false;
-                }
-            } else {
-                const otpVal = otpInput.value.trim();
-                if (otpVal.length !== 6) return showMessage("Enter the 6-digit verification code!", true);
-                
-                const originalText = btnText.innerText;
-                btnText.innerText = "Verifying...";
-                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
-                btn.disabled = true;
-                
-                try {
-                    const res = await fetch(`${API_URL}/auth/login`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email: email, otp: otpVal, selected_role: currentRole, name: name, phone: phone })
-                    });
-                    const data = await res.json();
-                    
                     if (res.ok && data.status === 'success') {
                         showMessage("Login successful!", false);
                         localStorage.setItem('uniMartToken', data.token);
                         localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
                         localStorage.setItem('uniActiveRole', data.user.role);
-                        
+
                         setTimeout(() => {
                             if (data.user.role === 'admin') {
                                 window.location.href = 'admin_dashboard.html';
@@ -382,14 +333,167 @@
                             }
                         }, 1000);
                     } else {
-                        showMessage(data.detail || data.message || "Login failed", true);
+                        showMessage(data.detail || data.message || "Login failed. Check your password.", true);
                         btnText.innerText = originalText;
-                        btnIcon.className = "fa-solid fa-check text-lg text-[#023047]";
+                        btnIcon.className = originalIconClass;
                     }
                 } catch (err) {
                     showMessage("Connection error. Please try again.", true);
                     btnText.innerText = originalText;
-                    btnIcon.className = "fa-solid fa-check text-lg text-[#023047]";
+                    btnIcon.className = originalIconClass;
+                } finally {
+                    btn.disabled = false;
+                }
+            } 
+            
+            else if (authMode === 'register') {
+                const name = document.getElementById('auth-name').value.trim();
+                const phone = document.getElementById('auth-phone').value.trim();
+                const password = document.getElementById('auth-password').value.trim();
+
+                if (!name) return showMessage("Please enter your name!", true);
+                if (!phone || phone.length !== 10) return showMessage("Please enter a valid 10-digit mobile number!", true);
+                if (!password) return showMessage("Please enter a password!", true);
+                if (password.length < 6) return showMessage("Password must be at least 6 characters!", true);
+
+                btnText.innerText = "Registering...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: email,
+                            password: password,
+                            selected_role: currentRole,
+                            name: name,
+                            phone: phone
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.status === 'success') {
+                        showMessage("Account registered and logged in!", false);
+                        localStorage.setItem('uniMartToken', data.token);
+                        localStorage.setItem('uniMartActiveUser', JSON.stringify(data.user));
+                        localStorage.setItem('uniActiveRole', data.user.role);
+
+                        setTimeout(() => {
+                            if (data.user.role === 'admin') {
+                                window.location.href = 'admin_dashboard.html';
+                            } else if (data.user.role === 'vendor') {
+                                window.location.href = 'vendor_dashboard.html';
+                            } else if (data.user.role === 'partner' || data.user.role === 'delivery') {
+                                window.location.href = 'delivery_dashboard.html';
+                            } else {
+                                window.location.href = 'index.html';
+                            }
+                        }, 1000);
+                    } else {
+                        showMessage(data.detail || data.message || "Registration failed.", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = originalIconClass;
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = originalIconClass;
+                } finally {
+                    btn.disabled = false;
+                }
+            } 
+            
+            else if (authMode === 'forgot') {
+                btnText.innerText = "Sending Code...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_URL}/auth/forgot-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, selected_role: currentRole })
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.status === 'success') {
+                        setAuthMode('reset');
+                        
+                        if (data.otp) {
+                            if (typeof emailjs !== 'undefined' && PUBLIC_KEY && SERVICE_ID && TEMPLATE_ID) {
+                                const templateParams = {
+                                    to_email: email,
+                                    to_name: "User",
+                                    otp_code: data.otp,
+                                    otp: data.otp,
+                                    verification_code: data.otp,
+                                    message: `Your Mekal Mart password reset code is ${data.otp}`
+                                };
+                                emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+                                    .then(() => {
+                                        showMessage("Reset code sent to your email!", false);
+                                    }, (err) => {
+                                        console.error("EmailJS Error:", err);
+                                        showMessage("EmailJS failed. Dev bypass code: " + data.otp, false);
+                                        document.getElementById('auth-otp').value = data.otp;
+                                    });
+                            } else {
+                                document.getElementById('auth-otp').value = data.otp;
+                                showMessage("EmailJS not configured. Auto-filled code: " + data.otp, false);
+                            }
+                        } else {
+                            showMessage("Reset code sent to your email!", false);
+                        }
+                    } else {
+                        showMessage(data.detail || data.message || "Failed to send reset code. Account may not exist.", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = originalIconClass;
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = originalIconClass;
+                } finally {
+                    btn.disabled = false;
+                }
+            } 
+            
+            else if (authMode === 'reset') {
+                const otpVal = document.getElementById('auth-otp').value.trim();
+                const newPassword = document.getElementById('auth-new-password').value.trim();
+
+                if (otpVal.length !== 6) return showMessage("Please enter the 6-digit verification code!", true);
+                if (!newPassword) return showMessage("Please enter a new password!", true);
+                if (newPassword.length < 6) return showMessage("New password must be at least 6 characters!", true);
+
+                btnText.innerText = "Resetting...";
+                btnIcon.className = "fa-solid fa-spinner fa-spin text-lg text-[#023047]";
+                btn.disabled = true;
+
+                try {
+                    const res = await fetch(`${API_URL}/auth/reset-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, otp: otpVal, new_password: newPassword })
+                    });
+                    const data = await res.json();
+
+                    if (res.ok && data.status === 'success') {
+                        showMessage("Password reset successfully! Please sign in.", false);
+                        setTimeout(() => {
+                            setAuthMode('login');
+                        }, 1500);
+                    } else {
+                        showMessage(data.detail || data.message || "Reset failed. Invalid code.", true);
+                        btnText.innerText = originalText;
+                        btnIcon.className = originalIconClass;
+                    }
+                } catch (err) {
+                    showMessage("Connection error. Please try again.", true);
+                    btnText.innerText = originalText;
+                    btnIcon.className = originalIconClass;
                 } finally {
                     btn.disabled = false;
                 }
@@ -400,19 +504,16 @@
             const email = prompt("Enter email for Mock login (Dev Bypass):", "user@example.com");
             if (!email) return;
             
-            const nameVal = document.getElementById('auth-name') ? document.getElementById('auth-name').value.trim() : '';
-            const phoneVal = document.getElementById('auth-phone') ? document.getElementById('auth-phone').value.trim() : '';
-            
             try {
                 const res = await fetch(`${API_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email: email,
-                        otp: "123456",
+                        password: "mock_password",
                         selected_role: currentRole,
-                        name: nameVal || email.split('@')[0],
-                        phone: phoneVal || "9999999999"
+                        name: email.split('@')[0],
+                        phone: "9999999999"
                     })
                 });
                 const data = await res.json();
@@ -434,7 +535,7 @@
                         }
                     }, 1000);
                 } else {
-                    showMessage(data.detail || "Mock registration failed", true);
+                    showMessage(data.detail || "Mock login failed.", true);
                 }
             } catch (e) {
                 showMessage("Sync Error: " + e.message, true);

@@ -22,6 +22,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    raise RuntimeError("ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set.")
+
 DELIVERY_FEE = float(os.getenv("DELIVERY_FEE", "10"))
 JWT_SECRET = os.getenv("JWT_SECRET", "fdf4671e2efd97bb1f09c25603deca73c713b194d2bb78f0d86de8583fb20625")
 JWT_ALGORITHM = "HS256"
@@ -36,7 +41,7 @@ try:
     dashboards = ['admin_login', 'admin_dashboard', 'vendor_dashboard', 'delivery_dashboard']
     for d in dashboards:
         old_path = f"{d}.php"
-        new_path = f"{d}.html"
+        new_path = f"public/{d}.html" if os.path.exists("public") else f"{d}.html"
         if os.path.exists(old_path):
             if os.path.exists(new_path):
                 os.remove(new_path)
@@ -203,10 +208,12 @@ def init_db():
                     role VARCHAR(20) NOT NULL CHECK (role IN ('student', 'vendor', 'partner', 'admin')),
                     auth_provider VARCHAR(20) DEFAULT 'google',
                     wallet_balance DECIMAL(10,2) DEFAULT 0.00,
+                    password_hash VARCHAR(255) NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NULL")
             try:
                 cursor.execute("ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check")
                 cursor.execute("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('student', 'vendor', 'partner', 'admin'))")
@@ -476,6 +483,15 @@ class OTPRequest(BaseModel):
     email: str
     selected_role: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+    selected_role: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    otp: str
+    new_password: str
+
 class LoginRequest(BaseModel):
     email: str
     otp: Optional[str] = None
@@ -553,7 +569,7 @@ async def request_otp(data: OTPRequest, background_tasks: BackgroundTasks):
     
     # Return OTP in response so client-side EmailJS or fallback can process it
     print(f"OTP NOTIFICATION: Generated OTP {otp} for email {email}")
-    return {"status": "success", "message": "Verification code generated.", "otp": otp}
+    return {"status": "success", "message": "Verification code generated."}
 
 @app.post("/auth/login")
 async def login(data: LoginRequest):
@@ -570,10 +586,7 @@ async def login(data: LoginRequest):
     cursor = conn.cursor(dictionary=True)
     try:
         if selected_role == 'admin':
-            admin_email = os.getenv("ADMIN_EMAIL", "admin@mekalmart.com").strip().lower()
-            admin_password = os.getenv("ADMIN_PASSWORD", "MekalAdmin@2026")
-            
-            if email != admin_email or not data.password or data.password != admin_password:
+            if email != ADMIN_EMAIL.strip().lower() or not data.password or data.password != ADMIN_PASSWORD:
                 raise HTTPException(status_code=401, detail="Invalid admin email or password.")
             
             # Check if admin user exists in DB
@@ -604,22 +617,13 @@ async def login(data: LoginRequest):
                 "user": user_data
             }
 
-        # Check OTP
-        otp = data.otp.strip() if data.otp else ""
-        cursor.execute("SELECT * FROM otps WHERE email = %s AND otp = %s AND created_at >= NOW() - INTERVAL '10 minutes'", (email, otp))
-        otp_row = cursor.fetchone()
-        
-        # If DEV_MODE is true, we allow a special mock verification bypass code (123456)
-        dev_mode = os.getenv("DEV_MODE", "true").lower() == "true"
-        is_mock_bypass = dev_mode and otp == "123456"
-        
-        if not otp_row and not is_mock_bypass:
-            raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
+        # Verify Password
+        if not data.password:
+            raise HTTPException(status_code=400, detail="Password is required.")
             
-        # Delete used OTP
-        if otp_row:
-            cursor.execute("DELETE FROM otps WHERE id = %s", (otp_row['id'],))
-            
+        import hashlib
+        pwd_hash = hashlib.sha256(data.password.encode("utf-8")).hexdigest()
+        
         # Check if user exists
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
@@ -629,10 +633,13 @@ async def login(data: LoginRequest):
         
         if not user:
             # Register user
+            if not phone:
+                raise HTTPException(status_code=400, detail="Account not found. Please enter your mobile number and name to register.")
+            
             cursor.execute("""
-                INSERT INTO users (email, phone, role, auth_provider, wallet_balance)
-                VALUES (%s, %s, %s, 'email_otp', 0.00) RETURNING id, email, phone, role, wallet_balance
-            """, (email, phone, selected_role))
+                INSERT INTO users (email, phone, role, auth_provider, wallet_balance, password_hash)
+                VALUES (%s, %s, %s, 'password', 0.00, %s) RETURNING id, email, phone, role, wallet_balance
+            """, (email, phone, selected_role, pwd_hash))
             user = cursor.fetchone()
             user_id = user["id"]
             
@@ -660,6 +667,16 @@ async def login(data: LoginRequest):
             user_avatar = avatar_url
             user_phone = phone
         else:
+            # User exists, verify password
+            if not user.get("password_hash"):
+                # Migration: if legacy user doesn't have password, set it to the password they entered
+                cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", (pwd_hash, user["id"]))
+                conn.commit()
+                user["password_hash"] = pwd_hash
+                
+            if user["password_hash"] != pwd_hash:
+                raise HTTPException(status_code=401, detail="Invalid email or password.")
+                
             user_id = user["id"]
             user_role = user["role"]
             wallet_balance = float(user["wallet_balance"])
@@ -726,6 +743,105 @@ async def login(data: LoginRequest):
             "token": token,
             "user": user_data
         }
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+
+@app.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest, background_tasks: BackgroundTasks):
+    email = data.email.strip().lower()
+    selected_role = data.selected_role
+    
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Check if user exists
+        cursor.execute("SELECT * FROM users WHERE email = %s AND role = %s", (email, selected_role))
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="No account found with this email and role.")
+            
+        # Generate 6-digit OTP
+        otp = f"{random.randint(100000, 999999)}"
+        
+        # Delete old OTPs for this email
+        cursor.execute("DELETE FROM otps WHERE email = %s", (email,))
+        # Insert new OTP
+        cursor.execute("INSERT INTO otps (email, otp) VALUES (%s, %s)", (email, otp))
+        conn.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        conn.close()
+        
+    # Send OTP Email
+    otp_html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+        <h2 style="color: #1B4332; margin-bottom: 20px;">Mekal Mart Password Reset Code</h2>
+        <p>Your 6-digit password reset verification token is:</p>
+        <div style="background-color: #F9FBFF; padding: 15px; border-radius: 8px; border: 1px solid #e0f3f7; text-align: center; margin-bottom: 20px;">
+            <span style="font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #1B4332;">{otp}</span>
+        </div>
+        <p style="font-size: 12px; color: #64748B;">This code is valid for 10 minutes. Please do not share it with anyone.</p>
+        <p style="font-size: 11px; color: #94A3B8; text-align: center; margin-top: 30px; border-top: 1px solid #E2E8F0; padding-top: 10px;">
+            Mekal Mart - Campus Delivery Platform
+        </p>
+    </div>
+    """
+    
+    # Send email in background
+    background_tasks.add_task(send_resend_email, email, f"{otp} is your password reset code", otp_html)
+    
+    print(f"PASSWORD RESET OTP: Generated OTP {otp} for email {email}")
+    return {"status": "success", "message": "Verification code generated.", "otp": otp}
+
+@app.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    email = data.email.strip().lower()
+    otp = data.otp.strip()
+    new_password = data.new_password.strip()
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters long.")
+        
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Check OTP
+        cursor.execute("SELECT * FROM otps WHERE email = %s AND otp = %s AND created_at >= NOW() - INTERVAL '10 minutes'", (email, otp))
+        otp_row = cursor.fetchone()
+        
+        dev_mode = os.getenv("DEV_MODE", "true").lower() == "true"
+        is_mock_bypass = dev_mode and otp == "123456"
+        
+        if not otp_row and not is_mock_bypass:
+            raise HTTPException(status_code=400, detail="Invalid or expired verification code.")
+            
+        # Delete used OTP
+        if otp_row:
+            cursor.execute("DELETE FROM otps WHERE id = %s", (otp_row['id'],))
+            
+        # Hash new password
+        import hashlib
+        pwd_hash = hashlib.sha256(new_password.encode("utf-8")).hexdigest()
+        
+        # Update user's password
+        cursor.execute("UPDATE users SET password_hash = %s WHERE email = %s", (pwd_hash, email))
+        conn.commit()
+        
+        return {"status": "success", "message": "Password reset successfully!"}
     except HTTPException:
         conn.rollback()
         raise
@@ -2004,66 +2120,11 @@ async def approve_product(data: ApproveProductRequest, current_user: dict = Depe
     finally:
         conn.close()
 
-# Serve public static assets individually to prevent exposing sensitive root files (.env, main.py)
-@app.get("/config.js")
-async def serve_config():
-    return FileResponse("config.js")
-
-@app.get("/script.js")
-async def serve_script():
-    return FileResponse("script.js")
-
-@app.get("/style.css")
-async def serve_style():
-    return FileResponse("style.css")
-
-@app.get("/logo.png")
-async def serve_logo():
-    return FileResponse("logo.png")
-
-@app.get("/store-placeholder.png")
-async def serve_store_placeholder():
-    return FileResponse("store-placeholder.png")
-
-@app.get("/manifest.json")
-async def serve_manifest():
-    return FileResponse("manifest.json")
-
-@app.get("/sw.js")
-async def serve_sw():
-    return FileResponse("sw.js", media_type="application/javascript")
-
-@app.get("/login.html")
-async def serve_login():
-    return FileResponse("login.html")
-
-@app.get("/admin_login.html")
-async def serve_admin_login():
-    return FileResponse("admin_login.html")
-
-@app.get("/admin_dashboard.html")
-async def serve_admin_dashboard():
-    return FileResponse("admin_dashboard.html")
-
-@app.get("/vendor_dashboard.html")
-async def serve_vendor_dashboard():
-    return FileResponse("vendor_dashboard.html")
-
-@app.get("/delivery_dashboard.html")
-async def serve_delivery_dashboard():
-    return FileResponse("delivery_dashboard.html")
-
-@app.get("/")
-async def serve_frontend():
-    return FileResponse("index.html")
-
-@app.get("/index.html")
-async def serve_index_html():
-    return FileResponse("index.html")
-
-
+# Serve public static assets globally using StaticFiles mount
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/", StaticFiles(directory="public", html=True), name="public")
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -176,13 +176,13 @@
         // 1. Check Auth on Load
         const activeUser = JSON.parse(localStorage.getItem('uniMartActiveUser'));
         if (!activeUser || activeUser.role !== 'admin') {
-            window.location.href = 'login.html';
+            window.location.href = 'admin_login.html';
         }
 
         function logout() {
             localStorage.removeItem('uniMartActiveUser');
             localStorage.removeItem('uniMartToken');
-            window.location.href = 'login.html';
+            window.location.href = 'admin_login.html';
         }
 
         // 2. Load Orders Function
